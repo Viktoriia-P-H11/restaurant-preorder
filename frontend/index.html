@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green & Tasty - Group Order Cart</title>
+  <title>Green & Tasty - Group Pre-Order Cart</title>
 
-  <!-- 1. Tailwind CSS для стилізації -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- 2. React 18 та ReactDOM через CDN -->
+  <!-- React 18 та ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
-  <!-- 3. Babel для підтримки JSX прямо в браузері -->
+  <!-- Babel для JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Шрифт Plus Jakarta Sans як у макеті -->
+  <!-- Шрифт Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -28,48 +28,239 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-0 md:p-6">
 
-  <!-- Контейнер, куди монтується наш React додаток -->
-  <div id="root" class="w-full max-w-[440px] bg-white shadow-2xl rounded-none md:rounded-3xl border border-gray-200 overflow-hidden flex flex-col max-h-[100vh] md:max-h-[92vh]"></div>
+  <!-- Контейнер для React -->
+  <div id="root" class="w-full max-w-[440px] bg-white shadow-2xl rounded-none md:rounded-3xl border border-gray-200 overflow-hidden flex flex-col max-h-[100vh] md:max-h-[95vh] relative"></div>
 
-  <!-- ГОЛОВНИЙ REACT КОД НА JSX -->
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // URL нашого реального бекенду в AWS Lambda!
-    const API_URL = "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/guest/groups/group123/sessions";
+    const API_BASE = "https://8191ergrtg.execute-api.us-west-2.amazonaws.com";
 
     function App() {
-      // 1. Стан: назва свята та столу (можна редагувати!)
+      // 1. Подія, стіл та час
       const [eventName, setEventName] = useState("Birthday Celebration");
-      const [tableName, setTableName] = useState("Table #4 (Indoor Lounge)");
-      const [isEditingEvent, setIsEditingEvent] = useState(false);
+      const [selectedTable, setSelectedTable] = useState("Table #4 (Indoor Lounge) • 6 Seats");
+      const [selectedTimeSlot, setSelectedTimeSlot] = useState("18:30 – 21:30 (3h slot)");
+      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-      // 2. Стан: спосіб оплати ('host' або 'split')
+      // 2. Спосіб оплати
       const [paymentMode, setPaymentMode] = useState('host');
 
-      // 3. Стан: розкриті картки гостей (для акордеону)
-      const [expandedGuest, setExpandedGuest] = useState('anna');
-
-      // 4. Стан: статус підтвердження всього столу
+      // 3. Блокування столу (замовлення відправлено)
       const [isLocked, setIsLocked] = useState(false);
 
-      // 5. Стан: дані з нашого AWS бекенду
-      const [backendData, setBackendData] = useState(null);
+      // 4. Панель "Share Link"
+      const [showShareBox, setShowShareBox] = useState(false);
 
-      // Завантажуємо реальні дані з нашого AWS бекенду через fetch
-      useEffect(() => {
-        fetch(API_URL)
-          .then(res => res.json())
-          .then(data => {
-            console.log("Дані з AWS Lambda:", data);
-            setBackendData(data);
-          })
-          .catch(err => console.log("Бекенд оффлайн або помилка:", err));
-      }, []);
+      // 5. Тост-повідомлення
+      const [toast, setToast] = useState({ show: false, text: "", icon: "✨" });
+
+      const showToast = (text, icon = "✨") => {
+        setToast({ show: true, text, icon });
+        setTimeout(() => setToast({ show: false, text: "", icon: "✨" }), 3500);
+      };
+
+      // 6. Стан розкритих акордеонів гостей (множинне розкриття)
+      const [openGuests, setOpenGuests] = useState({
+        anna: true,
+        oleg: true,
+        olena: false,
+        maxim: false
+      });
+
+      const toggleGuest = (id) => {
+        setOpenGuests(prev => ({ ...prev, [id]: !prev[id] }));
+      };
+
+      // 7. Список страв хоста (Walter)
+      const [hostDishes, setHostDishes] = useState([
+        { id: "h1", name: "Fresh Strawberry Mint Salad", desc: "10 mins • Appetizer", price: 17, emoji: "🥗", qty: 1 },
+        { id: "h2", name: "Roasted Sweet Potato & Lentil", desc: "10 mins • Appetizer", price: 10, emoji: "🍠", qty: 1 }
+      ]);
+
+      const removeHostDish = (dishId) => {
+        if (isLocked) {
+          showToast("Замовлення вже заблоковано кухнею!", "❌");
+          return;
+        }
+        setHostDishes(prev => prev.filter(d => d.id !== dishId));
+        showToast("Страву видалено з вашого замовлення", "🗑️");
+      };
+
+      // 8. Список гостей та їхніх страв
+      const [guests, setGuests] = useState([
+        {
+          id: "anna",
+          initials: "AM",
+          color: "bg-purple-100 text-purple-700",
+          name: "Anna Melnyk",
+          status: "Ready",
+          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
+          statusDot: "bg-[#12B76A]",
+          total: 32,
+          dishes: [
+            { id: "d1", name: "Grilled Salmon with Herbs", desc: "Main course", price: 22, emoji: "🐟", qty: 1 },
+            { id: "d2", name: "Berry Panna Cotta", desc: "Dessert", price: 10, emoji: "🍰", qty: 1 }
+          ]
+        },
+        {
+          id: "oleg",
+          initials: "OK",
+          color: "bg-amber-100 text-amber-800",
+          name: "Oleg Kovalenko",
+          status: "Choosing",
+          statusBadge: "bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89]",
+          statusDot: "bg-[#F79009]",
+          total: 14,
+          dishes: [
+            { id: "d3", name: "Creamy Wild Mushroom Soup", desc: "Appetizer • No croutons", price: 14, emoji: "🍲", qty: 1 }
+          ]
+        },
+        {
+          id: "olena",
+          initials: "OS",
+          color: "bg-blue-100 text-blue-700",
+          name: "Olena Sydorenko",
+          status: "Ready",
+          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
+          statusDot: "bg-[#12B76A]",
+          total: 18,
+          dishes: [
+            { id: "d4", name: "Avocado Quinoa Bowl", desc: "🌱 Vegan • Main course", price: 18, emoji: "🥑", qty: 1 }
+          ]
+        },
+        {
+          id: "maxim",
+          initials: "MK",
+          color: "bg-teal-100 text-teal-800",
+          name: "Maxim Kornilov",
+          status: "Ready",
+          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
+          statusDot: "bg-[#12B76A]",
+          total: 10,
+          dishes: [
+            { id: "d5", name: "Roasted Asparagus Salad", desc: "Appetizer", price: 10, emoji: "🥗", qty: 1 }
+          ]
+        }
+      ]);
+
+      const removeGuestDish = (guestId, dishId) => {
+        if (isLocked) {
+          showToast("Замовлення заблоковано кухнею!", "❌");
+          return;
+        }
+        setGuests(prev => prev.map(g => {
+          if (g.id !== guestId) return g;
+          const updatedDishes = g.dishes.filter(d => d.id !== dishId);
+          const newTotal = updatedDishes.reduce((sum, d) => sum + d.price * d.qty, 0);
+          return { ...g, dishes: updatedDishes, total: newTotal };
+        }));
+        showToast("Страву гостя видалено", "🗑️");
+      };
+
+      // Розрахунок підсумків
+      const hostTotal = hostDishes.reduce((sum, d) => sum + d.price * d.qty, 0);
+      const guestsTotal = guests.reduce((sum, g) => sum + g.total, 0);
+      const grandTotal = hostTotal + guestsTotal;
+
+      // Кнопка відправки консолідованого замовлення в AWS Lambda
+      const handleSubmitToKitchen = async () => {
+        if (isLocked) return;
+        try {
+          const res = await fetch(`${API_BASE}/group-reservations/group-1/submit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reservationId: "res-123" })
+          });
+          const result = await res.json();
+          setIsLocked(true);
+          showToast("🚀 Замовлення заблоковано та надіслано на кухню Green & Tasty!", "🎉");
+          console.log("Відповідь кухні з AWS:", result);
+        } catch (e) {
+          setIsLocked(true);
+          showToast("🚀 Замовлення зафіксовано та передано кухарям!", "🎉");
+        }
+      };
 
       return (
         <div class="flex flex-col h-full overflow-hidden bg-white">
-          
+
+          {/* ПЛАВАЮЧИЙ ТОСТ ПОВІДОМЛЕНЬ */}
+          {toast.show && (
+            <div class="absolute bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl z-50 text-xs font-semibold flex items-center gap-2 transition-all border border-gray-700 animate-bounce">
+              <span>{toast.icon}</span>
+              <span>{toast.text}</span>
+            </div>
+          )}
+
+          {/* МОДАЛЬНЕ ВІКНО: EDIT EVENT, TABLE & TIME */}
+          {isEditModalOpen && (
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 border border-gray-100">
+                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                  <h3 class="font-extrabold text-sm text-gray-900">✏️ Налаштування події та столу</h3>
+                  <button onClick={() => setIsEditModalOpen(false)} class="text-gray-400 hover:text-gray-600 text-sm font-bold">✕</button>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Назва події:</label>
+                  <input
+                    type="text"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-900 focus:border-[#18633B] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Оберіть стіл:</label>
+                  <select
+                    value={selectedTable}
+                    onChange={(e) => setSelectedTable(e.target.value)}
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 focus:border-[#18633B] outline-none"
+                  >
+                    <option>Table #4 (Indoor Lounge) • 6 Seats</option>
+                    <option>Table #2 (Garden Terrace) • 4 Seats</option>
+                    <option>Table #7 (Main Dining Hall) • 8 Seats</option>
+                    <option>Table #10 (Private VIP Room) • 12 Seats</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Часовий слот:</label>
+                  <select
+                    value={selectedTimeSlot}
+                    onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 focus:border-[#18633B] outline-none"
+                  >
+                    <option>18:30 – 21:30 (3h slot)</option>
+                    <option>19:00 – 22:00 (3h slot)</option>
+                    <option>20:00 – 23:00 (3h slot)</option>
+                    <option>12:00 – 15:00 (Lunch slot)</option>
+                  </select>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsEditModalOpen(false)}
+                    class="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                  >
+                    Скасувати
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      showToast("Дані столу та часу успішно оновлено!", "✓");
+                    }}
+                    class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm"
+                  >
+                    Зберегти ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ШАПКА КОРЗИНИ (Cart & GROUP ORDER) */}
           <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white">
             <div class="flex items-center gap-2.5">
@@ -78,7 +269,7 @@
                 GROUP ORDER
               </span>
             </div>
-            <button class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
+            <button onClick={() => showToast("Корзину закрито")} class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
               ✕
             </button>
           </div>
@@ -86,72 +277,34 @@
           {/* ОСНОВНА ЧАСТИНА З ПРОКРУТКОЮ */}
           <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
 
-            {/* 1. КАРТКА ПОДІЇ ТА СТОЛУ (З РЕЖИМОМ РЕДАГУВАННЯ!) */}
+            {/* 1. КАРТКА ПОДІЇ ТА СТОЛУ */}
             <div class="bg-[#F8FAF9] border border-gray-200/70 rounded-2xl p-3.5 relative shadow-sm">
-              {isEditingEvent ? (
-                /* ФОРМА РЕДАГУВАННЯ */
-                <div class="space-y-2.5">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-[#18633B] uppercase tracking-wide">
-                      ✏️ Редагування події та столу
-                    </span>
-                    <button
-                      onClick={() => setIsEditingEvent(false)}
-                      class="text-xs bg-[#18633B] hover:bg-[#13502f] text-white font-bold px-3 py-1 rounded-lg transition shadow-sm"
-                    >
-                      Save ✓
-                    </button>
-                  </div>
-                  <div>
-                    <label class="block text-[10px] text-gray-500 font-semibold mb-0.5">Назва події:</label>
-                    <input
-                      type="text"
-                      value={eventName}
-                      onChange={(e) => setEventName(e.target.value)}
-                      class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-900 focus:border-[#18633B] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] text-gray-500 font-semibold mb-0.5">Номер та локація столу:</label>
-                    <input
-                      type="text"
-                      value={tableName}
-                      onChange={(e) => setTableName(e.target.value)}
-                      class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs text-gray-800 focus:border-[#18633B] outline-none"
-                    />
-                  </div>
-                </div>
-              ) : (
-                /* ЗВИЧАЙНИЙ ВИГЛЯД */
+              <div class="flex items-start justify-between">
                 <div>
-                  <div class="flex items-start justify-between">
-                    <div>
-                      <div class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                        <span>🎉 {eventName}</span>
-                        <span class="text-gray-400 font-normal text-xs">• Walter (Host)</span>
-                      </div>
-                      <div class="mt-2 flex items-center gap-2 flex-wrap">
-                        <span class="text-xs text-gray-600 flex items-center gap-1 font-medium">
-                          📅 Today, Oct 24
-                        </span>
-                        <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] font-bold px-2 py-0.5 rounded text-[11px]">
-                          18:30 – 21:30 (3h slot)
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setIsEditingEvent(true)}
-                      class="text-xs font-semibold text-[#027A48] hover:underline flex items-center gap-0.5"
-                    >
-                      Edit ✏️
-                    </button>
+                  <div class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                    <span>🎉 {eventName}</span>
+                    <span class="text-gray-400 font-normal text-xs">• Walter (Host)</span>
                   </div>
-                  <div class="mt-2.5 pt-2 border-t border-gray-200/60 text-[11px] text-gray-500 flex items-center justify-between">
-                    <span>📍 {tableName}</span>
-                    <span class="font-semibold text-gray-700">6 Seats</span>
+                  <div class="mt-2 flex items-center gap-2 flex-wrap">
+                    <span class="text-xs text-gray-600 flex items-center gap-1 font-medium">
+                      📅 Today, Oct 24
+                    </span>
+                    <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] font-bold px-2 py-0.5 rounded text-[11px]">
+                      {selectedTimeSlot}
+                    </span>
                   </div>
                 </div>
-              )}
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  class="text-xs font-bold text-[#027A48] hover:underline flex items-center gap-0.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition"
+                >
+                  Edit ✏️
+                </button>
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-gray-200/60 text-[11px] text-gray-600 flex items-center justify-between">
+                <span>📍 {selectedTable}</span>
+                <span class="font-semibold text-gray-700">6 Guests Reserved</span>
+              </div>
             </div>
 
             {/* 2. ТАЙМЕР ДЕДЛАЙНУ КУХНІ */}
@@ -170,7 +323,7 @@
               </div>
             </div>
 
-            {/* 3. ПРОГРЕС ГОТОВНОСТІ СТОЛУ */}
+            {/* 3. ПРОГРЕС ГОТОВНОСТІ СТОЛУ ТА ДІЇ */}
             <div class="bg-white border border-gray-200 rounded-2xl p-3.5 shadow-sm">
               <div class="flex items-center justify-between text-xs mb-1.5">
                 <span class="font-bold text-gray-900 flex items-center gap-1.5">
@@ -186,13 +339,49 @@
               </div>
 
               <div class="flex items-center justify-between pt-0.5">
-                <button class="text-xs bg-[#FFF6E5] hover:bg-[#FEEFC6] text-[#B54708] font-bold px-3 py-1.5 rounded-xl border border-[#FEDF89] flex items-center gap-1 transition">
+                <button
+                  onClick={() => showToast("⚡ Нагадування надіслано в SMS для Oleg та Dmitry!", "📱")}
+                  class="text-xs bg-[#FFF6E5] hover:bg-[#FEEFC6] text-[#B54708] font-bold px-3 py-1.5 rounded-xl border border-[#FEDF89] flex items-center gap-1 transition"
+                >
                   ⚡ Remind Pending (2)
                 </button>
-                <button class="text-xs text-[#027A48] font-semibold hover:underline flex items-center gap-1">
+                <button
+                  onClick={() => setShowShareBox(!showShareBox)}
+                  class="text-xs text-[#027A48] font-bold hover:underline flex items-center gap-1 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100"
+                >
                   🔗 Share Link
                 </button>
               </div>
+
+              {/* РОЗКРИВНА ПАНЕЛЬ SHARE LINK */}
+              {showShareBox && (
+                <div class="mt-3 pt-3 border-t border-gray-100 text-xs space-y-2">
+                  <label class="block text-gray-500 text-[11px] font-semibold">Пряме посилання для друзів за цим столом:</label>
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      readOnly
+                      value="https://greentasty.com/order/table4-walter-99"
+                      class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-600 flex-1 select-all font-mono"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText("https://greentasty.com/order/table4-walter-99");
+                        showToast("📋 Посилання скопійовано в буфер!", "✓");
+                      }}
+                      class="bg-[#18633B] hover:bg-[#124b2d] text-white font-bold px-3 py-1 rounded-lg text-xs"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-[11px] text-gray-500 pt-1">
+                    <span>Швидка відправка:</span>
+                    <button onClick={() => showToast("Запрошення відправлено через SMS!", "💬")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">💬 SMS</button>
+                    <button onClick={() => showToast("Запрошення відправлено у WhatsApp!", "📱")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">📱 WhatsApp</button>
+                    <button onClick={() => showToast("Запрошення відправлено на Email!", "✉️")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">✉️ Email</button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 4. СПОСІБ ОПЛАТИ (PAYMENT MODE) */}
@@ -238,38 +427,32 @@
                     </span>
                   </div>
                 </div>
-                <span class="text-xs font-bold text-[#18633B]">$27.00</span>
+                <span class="text-xs font-bold text-[#18633B]">${hostTotal}.00</span>
               </div>
 
               {/* Блюда Вальтера */}
               <div class="p-3 space-y-2.5 divide-y divide-gray-100">
-                <div class="flex items-center justify-between text-xs pt-1">
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg">🥗</span>
-                    <div>
-                      <div class="font-bold text-gray-900">Fresh Strawberry Mint Salad</div>
-                      <div class="text-[10px] text-gray-400">10 mins • 1 portion</div>
+                {hostDishes.map((dish) => (
+                  <div key={dish.id} class="flex items-center justify-between text-xs pt-1.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">{dish.emoji}</span>
+                      <div>
+                        <div class="font-bold text-gray-900">{dish.name}</div>
+                        <div class="text-[10px] text-gray-400">{dish.desc}</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                      <span class="font-bold text-gray-900">${dish.price}</span>
+                      <button
+                        onClick={() => removeHostDish(dish.id)}
+                        class="text-gray-300 hover:text-red-500 text-xs p-1 transition"
+                        title="Видалити страву"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-bold text-gray-900">$17</span>
-                    <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between text-xs pt-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg">🍠</span>
-                    <div>
-                      <div class="font-bold text-gray-900">Roasted Sweet Potato & Lentil</div>
-                      <div class="text-[10px] text-gray-400">10 mins • 1 portion</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-bold text-gray-900">$10</span>
-                    <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -277,105 +460,101 @@
             <div class="space-y-2.5">
               <div class="flex items-center justify-between">
                 <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  GUEST ORDERS (5 GUESTS)
+                  GUEST ORDERS ({guests.length} GUESTS)
                 </label>
-                <button class="text-xs text-[#027A48] font-bold hover:underline">
+                <button
+                  onClick={() => {
+                    const newName = prompt("Введіть ім'я нового гостя:", "Дмитро");
+                    if (newName) {
+                      showToast(`👤 Гостя ${newName} додано! Тепер можна обрати страви`, "✓");
+                    }
+                  }}
+                  class="text-xs text-[#027A48] font-bold hover:underline"
+                >
                   + Add for Guest
                 </button>
               </div>
 
-              {/* Гість 1: Anna Melnyk (Ready) */}
-              <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                <div
-                  onClick={() => setExpandedGuest(expandedGuest === 'anna' ? null : 'anna')}
-                  class="bg-[#F8FAF9] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
-                >
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px] flex items-center justify-center">
-                      AM
+              {/* КАРТКИ ГОСТЕЙ */}
+              {guests.map((g) => (
+                <div key={g.id} class="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                  {/* Заголовок картки гостя */}
+                  <div
+                    onClick={() => toggleGuest(g.id)}
+                    class="bg-[#F8FAF9] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <div class="flex items-center gap-2">
+                      <div class={`w-6 h-6 rounded-full ${g.color} font-bold text-[10px] flex items-center justify-center`}>
+                        {g.initials}
+                      </div>
+                      <span class="font-bold text-gray-900 text-xs">{g.name}</span>
+                      <span class={`${g.statusBadge} text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1`}>
+                        <span class={`w-1.5 h-1.5 rounded-full ${g.statusDot}`}></span>
+                        {g.status}
+                      </span>
                     </div>
-                    <span class="font-bold text-gray-900 text-xs">Anna Melnyk</span>
-                    <span class="bg-[#ECFDF3] text-[#027A48] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#D1FADF]">
-                      <span class="w-1.5 h-1.5 rounded-full bg-[#12B76A]"></span>
-                      Ready
-                    </span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-gray-900">${g.total}.00</span>
+                      <span class="text-xs text-gray-400">{openGuests[g.id] ? '▲' : '▼'}</span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold text-gray-900">$32.00</span>
-                    <span class="text-xs text-gray-400">{expandedGuest === 'anna' ? '▲' : '▼'}</span>
-                  </div>
+
+                  {/* Розкритий список страв гостя */}
+                  {openGuests[g.id] && (
+                    <div class="p-3 space-y-2 border-t border-gray-100 divide-y divide-gray-50">
+                      {g.dishes.length === 0 ? (
+                        <div class="text-[11px] text-gray-400 py-1">Гість ще не додав страви</div>
+                      ) : (
+                        g.dishes.map((dish) => (
+                          <div key={dish.id} class="flex items-center justify-between text-xs pt-1.5">
+                            <div class="flex items-center gap-2">
+                              <span class="text-base">{dish.emoji}</span>
+                              <div>
+                                <div class="font-medium text-gray-800">{dish.name}</div>
+                                <div class="text-[10px] text-gray-400">{dish.desc}</div>
+                              </div>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                              <span class="font-bold text-gray-900">${dish.price}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeGuestDish(g.id, dish.id);
+                                }}
+                                class="text-gray-300 hover:text-red-500 text-xs p-1 transition"
+                                title="Видалити страву"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
+              ))}
 
-                {expandedGuest === 'anna' && (
-                  <div class="p-3 space-y-2.5 border-t border-gray-100 divide-y divide-gray-100">
-                    <div class="flex items-center justify-between text-xs pt-1">
-                      <div class="flex items-center gap-2">
-                        <span class="text-base">🐟</span>
-                        <div class="text-gray-800 font-medium">Grilled Salmon with Herbs</div>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-gray-900">$22</span>
-                        <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
-                      </div>
-                    </div>
-                    <div class="flex items-center justify-between text-xs pt-2">
-                      <div class="flex items-center gap-2">
-                        <span class="text-base">🍰</span>
-                        <div class="text-gray-800 font-medium">Berry Panna Cotta (Dessert)</div>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-gray-900">$10</span>
-                        <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Гість 2: Oleg Kovalenko (Choosing) */}
-              <div class="border border-[#FEDF89] rounded-2xl overflow-hidden bg-white shadow-sm">
-                <div
-                  onClick={() => setExpandedGuest(expandedGuest === 'oleg' ? null : 'oleg')}
-                  class="bg-[#FFFDF5] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-[#FEF6EE]/50 transition"
-                >
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center">
-                      OK
-                    </div>
-                    <span class="font-bold text-gray-900 text-xs">Oleg Kovalenko</span>
-                    <span class="bg-[#FFF6E5] text-[#B54708] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#FEDF89]">
-                      <span class="w-1.5 h-1.5 rounded-full bg-[#F79009]"></span>
-                      Choosing
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold text-gray-900">$14.00</span>
-                    <span class="text-xs text-gray-400">{expandedGuest === 'oleg' ? '▲' : '▼'}</span>
-                  </div>
-                </div>
-
-                {expandedGuest === 'oleg' && (
-                  <div class="p-3 text-xs text-gray-600 border-t border-[#FEDF89]/50">
-                    <div class="flex items-center justify-between">
-                      <span>🍲 Tom Yum Soup</span>
-                      <span class="font-bold">$14</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Гість 3: Dmitry Tarasov (Not joined) */}
-              <div class="border border-gray-200 rounded-2xl p-3 bg-white flex items-center justify-between text-xs shadow-sm">
+              {/* Гість: Dmitry Tarasov (Not joined) */}
+              <div class="border border-dashed border-gray-300 rounded-2xl p-3 bg-gray-50/70 flex items-center justify-between text-xs shadow-sm">
                 <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-full bg-gray-100 text-gray-600 font-bold text-[10px] flex items-center justify-center">
+                  <div class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 font-bold text-[10px] flex items-center justify-center">
                     DT
                   </div>
-                  <span class="font-bold text-gray-700">Dmitry Tarasov</span>
-                  <span class="bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                    Not joined
-                  </span>
+                  <div>
+                    <div class="font-bold text-gray-700 flex items-center gap-1.5">
+                      <span>Dmitry Tarasov</span>
+                      <span class="bg-gray-200 text-gray-600 text-[9px] font-semibold px-1.5 py-0.2 rounded">
+                        Not joined
+                      </span>
+                    </div>
+                    <div class="text-[10px] text-gray-400">Invited via +380 97 ••• •• 45</div>
+                  </div>
                 </div>
-                <button class="text-[11px] bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold px-2.5 py-1 rounded-lg border border-gray-200 transition">
+                <button
+                  onClick={() => showToast("📲 SMS-запрошення повторно надіслано Дмитру!", "💬")}
+                  class="text-[11px] bg-white hover:bg-gray-100 text-emerald-900 font-bold px-2.5 py-1 rounded-lg border border-gray-200 transition shadow-sm"
+                >
                   Resend SMS 💬
                 </button>
               </div>
@@ -414,30 +593,30 @@
 
           </div>
 
-          {/* ПІДВАЛ (ИТОГ ТА КНОПКА ЗАМОВЛЕННЯ) */}
+          {/* ПІДВАЛ (ПІДСУМОК ТА КНОПКА ЗАМОВЛЕННЯ) */}
           <div class="p-4 border-t border-gray-100 bg-white space-y-3 flex-shrink-0">
             <div class="space-y-1 text-xs">
               <div class="flex items-center justify-between text-gray-500">
                 <span>Walter's Order:</span>
-                <span class="font-medium text-gray-900">$27.00</span>
+                <span class="font-medium text-gray-900">${hostTotal}.00</span>
               </div>
               <div class="flex items-center justify-between text-gray-500">
-                <span>Guests' Orders (5 items):</span>
-                <span class="font-medium text-gray-900">$74.00</span>
+                <span>Guests' Orders ({guests.reduce((sum, g) => sum + g.dishes.length, 0)} items):</span>
+                <span class="font-medium text-gray-900">${guestsTotal}.00</span>
               </div>
               <div class="flex items-center justify-between pt-1 border-t border-gray-100">
                 <span class="font-extrabold text-sm text-gray-900">
                   Grand Total <span class="text-xs font-normal text-gray-400">({paymentMode === 'host' ? 'Host covers all' : 'Each pays own'})</span>
                 </span>
                 <span class="text-2xl font-black text-[#18633B]">
-                  $101.00
+                  ${grandTotal}.00
                 </span>
               </div>
             </div>
 
             {/* ВЕЛИКА ЗЕЛЕНА КНОПКА SUBMIT */}
             <button
-              onClick={() => setIsLocked(true)}
+              onClick={handleSubmitToKitchen}
               class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
                 isLocked
                   ? 'bg-gray-800 text-gray-300 cursor-not-allowed'
@@ -455,7 +634,6 @@
       );
     }
 
-    // Монтуємо React в контейнер #root
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
