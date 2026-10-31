@@ -1,26 +1,26 @@
-# Restaurant Group Pre-Order (Green & Tasty) 🥗🍽️
+# Restaurant Group Pre-Order API & Application
 
-A full-stack cloud application implementing a group pre-order system for restaurant table reservations, built with **Node.js 22**, **React 18**, **Tailwind CSS**, and deployed serverless on **AWS Lambda** & **Amazon API Gateway** via **Terraform**.
+A full-stack cloud application implementing a group pre-order system for restaurant table reservations, built with Node.js 22, React 18, Tailwind CSS, and deployed serverless on AWS Lambda and Amazon API Gateway via Terraform.
 
-🌐 **Live Application & API:**  
-[https://8191ergrtg.execute-api.us-west-2.amazonaws.com/](https://8191ergrtg.execute-api.us-west-2.amazonaws.com/)
-
----
-
-## 📌 Architecture & Tech Stack
-
-* **Frontend:** React 18 (CDN), Tailwind CSS, interactive group cart matching the restaurant design system (Table & Time management, guest accordions, real-time total calculation, meal deletion, interactive invitation sharing via Email, SMS & WhatsApp).
-* **Backend:** Node.js 22 ES Modules running on AWS Lambda. Serves both the interactive visual web application at `/` and the REST API endpoints.
-* **Infrastructure as Code (IaC):** Terraform (`infra/main.tf`) managing AWS Lambda (`nodejs22.x`), IAM roles, CloudWatch logs, and HTTP API Gateway v2.
+Live Application & API:  
+https://8191ergrtg.execute-api.us-west-2.amazonaws.com/
 
 ---
 
-## 🚀 Implemented Levels & API Endpoints
+## Architecture and Technology Stack
 
-### 🟢 Level 1: Get Group Participant Sessions (Owner View)
-Returns all participant guest sessions, ordered dishes, individual totals, and overall group total.
+* **Frontend:** React 18, Tailwind CSS, interactive group cart matching the restaurant design system (table and time configuration, guest accordions, real-time total calculation, dish removal, invite sharing via Email, SMS, and WhatsApp).
+* **Backend:** Node.js 22 (ES Modules) running on AWS Lambda. Serves both the web application interface at root (`/`) and the REST API endpoints.
+* **Infrastructure as Code (IaC):** Terraform (`infra/main.tf`) provisioning AWS Lambda (`nodejs22.x`), IAM execution roles, CloudWatch logs, and HTTP API Gateway v2.
 
-* **Endpoint:** `GET /guest/groups/{groupReservationId}/sessions`
+---
+
+## API Endpoints and Specification
+
+### Level 1: Get Group Participant Sessions (Owner View)
+Returns all participant guest sessions, ordered items, individual totals, and the overall group total.
+
+* **Method & Path:** `GET /guest/groups/{groupReservationId}/sessions`
 * **Response (200 OK):**
 ```json
 {
@@ -66,10 +66,10 @@ Returns all participant guest sessions, ordered dishes, individual totals, and o
 
 ---
 
-### 🔵 Level 2: Owner Session & Consolidated Pre-Order Submission
+### Level 2: Owner Session and Consolidated Pre-Order Submission
 
 #### 1. Get Owner Session ID
-* **Endpoint:** `GET /reservations/{reservationId}/guest-session-id`
+* **Method & Path:** `GET /reservations/{reservationId}/guest-session-id`
 * **Response (200 OK):**
 ```json
 {
@@ -78,9 +78,9 @@ Returns all participant guest sessions, ordered dishes, individual totals, and o
 ```
 
 #### 2. Submit Consolidated Pre-Order
-Filters only submitted sessions (`isSubmitted: true`), aggregates and consolidates dishes by `dishId`, updates order status to `SubmittedByCustomer` and group reservation to `Submitted`.
+Filters submitted sessions (`isSubmitted: true`), aggregates and consolidates dishes by `dishId`, updates order status to `SubmittedByCustomer` and group reservation status to `Submitted`.
 
-* **Endpoint:** `POST /group-reservations/{groupReservationId}/submit`
+* **Method & Path:** `POST /group-reservations/{groupReservationId}/submit`
 * **Request Body:**
 ```json
 {
@@ -103,10 +103,10 @@ Filters only submitted sessions (`isSubmitted: true`), aggregates and consolidat
 
 ---
 
-### 🟣 Level 3: Remove Guest Session
+### Level 3: Remove Guest Session
 Removes a specific guest session from the group reservation and returns an updated snapshot with recalculated totals.
 
-* **Endpoint:** `DELETE /guest/groups/{groupReservationId}/sessions/{guestSessionId}`
+* **Method & Path:** `DELETE /guest/groups/{groupReservationId}/sessions/{guestSessionId}`
 * **Response (200 OK):**
 ```json
 {
@@ -135,13 +135,13 @@ Removes a specific guest session from the group reservation and returns an updat
 
 ---
 
-### 🔄 Utility: Reset State
-Resets in-memory mock data back to default values for grading and repeated automated testing:
-* **Endpoint:** `GET /reset` or `POST /reset`
+### Utility: Reset State
+Resets in-memory mock data back to default values for grading and automated test execution:
+* **Method & Path:** `GET /reset` or `POST /reset`
 
 ---
 
-## 🛠️ Project Structure
+## Project Structure
 
 ```
 restaurant-js/
@@ -150,19 +150,19 @@ restaurant-js/
 │   ├── index.html        # Visual React application bundle
 │   └── package.json
 ├── frontend/
-│   └── index.html        # Standalone frontend development file
+│   └── index.html        # Frontend source file
 ├── infra/
-│   └── main.tf           # Terraform infrastructure configuration (AWS Lambda & API Gateway)
+│   └── main.tf           # Terraform infrastructure configuration
 └── README.md
 ```
 
 ---
 
-## 💻 Local Testing & Deployment
+## Deployment Instructions
 
-### Run Terraform:
+Execute Terraform commands from the `infra` directory:
 ```bash
 cd infra
 terraform init
-terraform apply
+terraform apply -auto-approve
 ```

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-// Початковий стан сесій згідно з умовами домашнього завдання
+// Initial state for participants based on homework specification
 const getInitialSessions = () => [
   {
     id: "session1",
@@ -49,12 +49,12 @@ const getInitialSessions = () => [
   }
 ];
 
-// Сесії в пам'яті Lambda
+// In-memory sessions state
 let mockSessions = getInitialSessions();
 let orderStatus = "Draft";
 let groupReservationStatus = "Active";
 
-// Допоміжна функція: розрахунок сум учасників та загальної суми групи
+// Helper function: calculate snapshot totals
 function calculateGroupSnapshot(sessions) {
   let grandTotal = 0;
 
@@ -82,8 +82,6 @@ function calculateGroupSnapshot(sessions) {
 }
 
 export const handler = async (event) => {
-  console.log("Вхідний запит:", JSON.stringify(event));
-
   const path = event.rawPath || event.path || "/";
   const method = event.requestContext?.http?.method || event.httpMethod || "GET";
 
@@ -94,20 +92,19 @@ export const handler = async (event) => {
     "Access-Control-Allow-Headers": "Content-Type, Role, X-Role, X-User-Role, Authorization",
   };
 
-  // Preflight CORS запит
+  // Preflight CORS
   if (method === "OPTIONS") {
     return { statusCode: 204, headers: jsonHeaders, body: "" };
   }
 
-  // Визначення ролі користувача (за замовчуванням Owner, але перевіряємо заголовки)
+  // Determine user role
   const headers = event.headers || {};
   const userRole = headers['x-user-role'] || headers['x-role'] || headers['role'] || 'Owner';
 
   try {
-    // ==========================================
-    // 🌐 ВІЗУАЛЬНИЙ ЗАСТОСУНОК (HTML + REACT + TAILWIND)
-    // Відкривається за головним посиланням!
-    // ==========================================
+    // ------------------------------------------------------------------
+    // Visual React Web Application Interface
+    // ------------------------------------------------------------------
     if (method === "GET" && (path === "/" || path === "/index.html" || path === "")) {
       return {
         statusCode: 200,
@@ -119,10 +116,9 @@ export const handler = async (event) => {
       };
     }
 
-    // ==========================================
-    // 🔄 СКИДАННЯ СТАНУ ДО ПОЧАТКОВОГО
-    // POST /reset або GET /reset
-    // ==========================================
+    // ------------------------------------------------------------------
+    // Utility: Reset State to Initial Mock Data
+    // ------------------------------------------------------------------
     if (path === "/reset") {
       mockSessions = getInitialSessions();
       orderStatus = "Draft";
@@ -134,12 +130,11 @@ export const handler = async (event) => {
       };
     }
 
-    // ==========================================
-    // 🟢 1-Й РІВЕНЬ СКЛАДНОСТІ:
+    // ------------------------------------------------------------------
+    // Level 1: Get Group Participant Sessions
     // GET /guest/groups/{groupReservationId}/sessions
-    // ==========================================
+    // ------------------------------------------------------------------
     if (method === "GET" && path.includes("/sessions") && !path.includes("/guest-session-id")) {
-      // Перевірка існування групи
       if (path.includes("not-found")) {
         return {
           statusCode: 404,
@@ -148,7 +143,6 @@ export const handler = async (event) => {
         };
       }
 
-      // Owner бачить сесії учасників типу Guest
       const guestSessions = mockSessions.filter(s => s.type === "Guest");
       const snapshot = calculateGroupSnapshot(guestSessions);
 
@@ -159,13 +153,11 @@ export const handler = async (event) => {
       };
     }
 
-    // ==========================================
-    // 🔵 2-Й РІВЕНЬ СКЛАДНОСТІ:
-    // 1. Отримати owner session id
+    // ------------------------------------------------------------------
+    // Level 2.1: Get Owner Session ID
     // GET /reservations/{reservationId}/guest-session-id
-    // ==========================================
+    // ------------------------------------------------------------------
     if (method === "GET" && path.includes("/guest-session-id")) {
-      // Тільки Owner може викликати endpoint
       if (userRole.toLowerCase() !== "owner") {
         return {
           statusCode: 403,
@@ -174,7 +166,6 @@ export const handler = async (event) => {
         };
       }
 
-      // Якщо reservation не знайдено — 404
       if (path.includes("not-found")) {
         return {
           statusCode: 404,
@@ -194,13 +185,11 @@ export const handler = async (event) => {
       };
     }
 
-    // ==========================================
-    // 🔵 2-Й РІВЕНЬ СКЛАДНОСТІ:
-    // 2. Підтвердити консолідований pre-order
+    // ------------------------------------------------------------------
+    // Level 2.2: Submit Consolidated Pre-Order
     // POST /group-reservations/{groupReservationId}/submit
-    // ==========================================
+    // ------------------------------------------------------------------
     if (method === "POST" && path.includes("/submit")) {
-      // Тільки Owner може викликати
       if (userRole.toLowerCase() !== "owner") {
         return {
           statusCode: 403,
@@ -218,7 +207,6 @@ export const handler = async (event) => {
         }
       }
 
-      // Якщо reservation або group reservation не знайдено — 404
       if (path.includes("not-found") || (body.reservationId && body.reservationId === "not-found")) {
         return {
           statusCode: 404,
@@ -227,7 +215,6 @@ export const handler = async (event) => {
         };
       }
 
-      // Якщо order не знайдено — 400
       if (body.orderId === "not-found") {
         return {
           statusCode: 400,
@@ -236,7 +223,6 @@ export const handler = async (event) => {
         };
       }
 
-      // 1. Взяти лише submitted guest sessions (+ owner session)
       const submittedSessions = mockSessions.filter(s => s.isSubmitted === true);
       if (submittedSessions.length === 0) {
         return {
@@ -246,7 +232,6 @@ export const handler = async (event) => {
         };
       }
 
-      // 2. Зібрати всі страви в один список
       const allItems = submittedSessions.flatMap(s => s.items);
       if (allItems.length === 0) {
         return {
@@ -256,18 +241,15 @@ export const handler = async (event) => {
         };
       }
 
-      // 3. Об'єднати однакові страви по dishId
       const consolidatedMap = {};
       for (const item of allItems) {
         const dId = item.dish.id;
         consolidatedMap[dId] = (consolidatedMap[dId] || 0) + item.quantity;
       }
 
-      // Зміна статусів:
       orderStatus = "SubmittedByCustomer";
       groupReservationStatus = "Submitted";
 
-      // Формуємо масив результату
       const consolidatedDishes = Object.keys(consolidatedMap).map(dishId => ({
         dishId: dishId,
         quantity: consolidatedMap[dishId]
@@ -280,13 +262,11 @@ export const handler = async (event) => {
       };
     }
 
-    // ==========================================
-    // 🟣 3-Й РІВЕНЬ СКЛАДНОСТІ:
-    // Видалення guest session із групи
+    // ------------------------------------------------------------------
+    // Level 3: Delete Guest Session from Group
     // DELETE /guest/groups/{groupReservationId}/sessions/{guestSessionId}
-    // ==========================================
+    // ------------------------------------------------------------------
     if (method === "DELETE" && path.includes("/sessions/")) {
-      // Тільки Owner може видаляти guest session
       if (userRole.toLowerCase() !== "owner") {
         return {
           statusCode: 403,
@@ -298,7 +278,6 @@ export const handler = async (event) => {
       const parts = path.split("/").filter(Boolean);
       const guestSessionId = parts[parts.length - 1];
 
-      // Якщо guest session не належить цій group reservation — 400
       if (guestSessionId.startsWith("other-") || path.includes("wrong-group")) {
         return {
           statusCode: 400,
@@ -307,7 +286,6 @@ export const handler = async (event) => {
         };
       }
 
-      // Якщо guest session не знайдена — 404
       const sessionExists = mockSessions.some(s => s.id === guestSessionId);
       if (!sessionExists) {
         return {
@@ -317,10 +295,8 @@ export const handler = async (event) => {
         };
       }
 
-      // Видаляємо учасника
       mockSessions = mockSessions.filter(s => s.id !== guestSessionId);
 
-      // Повертаємо оновлений snapshot групи
       const updatedSnapshot = calculateGroupSnapshot(mockSessions.filter(s => s.type === "Guest"));
       return {
         statusCode: 200,
@@ -329,11 +305,10 @@ export const handler = async (event) => {
       };
     }
 
-    // Маршрут не знайдено
     return {
       statusCode: 404,
       headers: jsonHeaders,
-      body: JSON.stringify({ error: "Маршрут не знайдено" })
+      body: JSON.stringify({ error: "Route not found" })
     };
   } catch (err) {
     return {
