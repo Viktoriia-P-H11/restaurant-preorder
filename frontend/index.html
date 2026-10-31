@@ -86,6 +86,29 @@
         setTimeout(() => setToast({ show: false, text: "" }), 3500);
       };
 
+      // Real live URL for sharing
+      const shareUrl = typeof window !== 'undefined' && window.location.href.startsWith('http')
+        ? window.location.href.split('?')[0]
+        : "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/";
+
+      // Share drawer and interactive modal state
+      const [showShareBox, setShowShareBox] = useState(false);
+      const [shareModal, setShareModal] = useState({
+        isOpen: false,
+        channel: 'email', // 'email' | 'sms' | 'whatsapp' | 'remind'
+        recipient: '',
+        guestName: ''
+      });
+
+      const openShareModal = (channel, defaultRecipient = '', guestName = '') => {
+        setShareModal({
+          isOpen: true,
+          channel,
+          recipient: defaultRecipient,
+          guestName
+        });
+      };
+
       // ----------------------------------------------------
       // DATA: POPULAR DISHES (from Figma)
       // ----------------------------------------------------
@@ -712,6 +735,175 @@
                   </div>
                 )}
 
+                {/* Share / Invite Modal (SMS, WhatsApp, Email, Remind) */}
+                {shareModal.isOpen && (
+                  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <h3 class="font-extrabold text-sm text-gray-900">
+                          {shareModal.channel === 'email' && 'Send Invitation via Email'}
+                          {shareModal.channel === 'sms' && 'Send Invitation via SMS'}
+                          {shareModal.channel === 'whatsapp' && 'Send Invitation via WhatsApp'}
+                          {shareModal.channel === 'remind' && 'Remind Pending Guests'}
+                        </h3>
+                        <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="text-gray-400 hover:text-gray-600 font-bold text-xs">X</button>
+                      </div>
+
+                      {/* Email Form */}
+                      {shareModal.channel === 'email' && (
+                        <div class="space-y-3">
+                          <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Recipient Email Address:</label>
+                            <input
+                              type="email"
+                              placeholder="guest@example.com"
+                              value={shareModal.recipient}
+                              onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
+                              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
+                              autoFocus
+                            />
+                          </div>
+                          <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
+                            <span class="font-bold text-gray-700 block">Message Preview:</span>
+                            <p class="text-gray-500 text-[10px] break-all">
+                              "Join table at Green &amp; Tasty: {shareUrl}"
+                            </p>
+                          </div>
+                          <div class="pt-2 flex justify-end gap-2">
+                            <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+                            <button
+                              onClick={() => {
+                                const email = shareModal.recipient.trim();
+                                const subject = encodeURIComponent("Group Pre-Order Invitation - Green & Tasty");
+                                const body = encodeURIComponent(`Hello,\n\nYou are invited to join our table at Green & Tasty.\nSelect your dishes here:\n${shareUrl}`);
+                                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                                setShareModal({ ...shareModal, isOpen: false });
+                                showToast(email ? `Opening email for ${email}` : "Opening email client");
+                              }}
+                              class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                            >
+                              Open in Mail Client
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SMS Form */}
+                      {shareModal.channel === 'sms' && (
+                        <div class="space-y-3">
+                          <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Recipient Phone Number {shareModal.guestName ? `(${shareModal.guestName})` : ""}:</label>
+                            <input
+                              type="tel"
+                              placeholder="+380971234567"
+                              value={shareModal.recipient}
+                              onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
+                              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
+                              autoFocus
+                            />
+                          </div>
+                          <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
+                            <span class="font-bold text-gray-700 block">SMS Preview:</span>
+                            <p class="text-gray-500 text-[10px] break-all">
+                              "Join table at Green &amp; Tasty: {shareUrl}"
+                            </p>
+                          </div>
+                          <div class="pt-2 flex justify-end gap-2">
+                            <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+                            <button
+                              onClick={() => {
+                                const phone = shareModal.recipient.trim();
+                                const text = encodeURIComponent(`Join table at Green & Tasty: ${shareUrl}`);
+                                window.location.href = phone ? `sms:${phone}?body=${text}` : `sms:?body=${text}`;
+                                setShareModal({ ...shareModal, isOpen: false });
+                                showToast(phone ? `Opening SMS for ${phone}` : "Opening SMS client");
+                              }}
+                              class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                            >
+                              Open SMS Client
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* WhatsApp Form */}
+                      {shareModal.channel === 'whatsapp' && (
+                        <div class="space-y-3">
+                          <p class="text-xs text-gray-600">
+                            WhatsApp will open, allowing you to select any contact or group conversation with the pre-filled link.
+                          </p>
+                          <div class="bg-[#ECFDF3] p-2.5 rounded-xl border border-[#D1FADF] text-[11px] text-[#027A48] space-y-1">
+                            <span class="font-bold block">Message Content:</span>
+                            <p class="text-[10px] break-all">"Hello! Join our table pre-order at Green &amp; Tasty: {shareUrl}"</p>
+                          </div>
+                          <div class="pt-2 flex justify-end gap-2">
+                            <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+                            <button
+                              onClick={() => {
+                                const text = encodeURIComponent(`Hello! Join our table pre-order at Green & Tasty: ${shareUrl}`);
+                                window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+                                setShareModal({ ...shareModal, isOpen: false });
+                                showToast("Opening WhatsApp");
+                              }}
+                              class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                            >
+                              Open WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Remind Form */}
+                      {shareModal.channel === 'remind' && (
+                        <div class="space-y-3">
+                          <p class="text-xs text-gray-600">
+                            Send quick reminder to guests who haven't completed their dish selection:
+                          </p>
+                          <div class="space-y-2">
+                            <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs">
+                              <div>
+                                <span class="font-bold text-gray-900 block">Olena (Still choosing)</span>
+                                <span class="text-[10px] text-gray-500">+380 (67) 555-77-88</span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const text = encodeURIComponent(`Hello Olena, please confirm your dish selection for Green & Tasty: ${shareUrl}`);
+                                  window.location.href = `sms:+380675557788?body=${text}`;
+                                  setShareModal({ ...shareModal, isOpen: false });
+                                  showToast("SMS reminder opened for Olena");
+                                }}
+                                class="bg-white hover:bg-gray-100 text-gray-900 font-bold px-3 py-1 rounded-lg border border-gray-300 text-[11px] shadow-xs"
+                              >
+                                Send SMS
+                              </button>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs">
+                              <div>
+                                <span class="font-bold text-gray-900 block">Alex (No dishes yet)</span>
+                                <span class="text-[10px] text-gray-500">+380 (97) 112-33-45</span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const text = encodeURIComponent(`Hello Alex, please select your dishes for Green & Tasty: ${shareUrl}`);
+                                  window.location.href = `sms:+380971123345?body=${text}`;
+                                  setShareModal({ ...shareModal, isOpen: false });
+                                  showToast("SMS reminder opened for Alex");
+                                }}
+                                class="bg-white hover:bg-gray-100 text-gray-900 font-bold px-3 py-1 rounded-lg border border-gray-300 text-[11px] shadow-xs"
+                              >
+                                Send SMS
+                              </button>
+                            </div>
+                          </div>
+                          <div class="pt-2 flex justify-end">
+                            <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl">Close</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* HEADER */}
                 <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3">
                   <div class="flex items-center justify-between">
@@ -740,6 +932,72 @@
                       <span class="font-semibold text-gray-700">{participants.length} of 5 guests</span>
                     </div>
                   </div>
+
+                  {/* Share Link & Remind Row */}
+                  <div class="flex items-center justify-between pt-1">
+                    <button
+                      onClick={() => openShareModal('remind')}
+                      class="text-xs font-bold text-[#B54708] bg-[#FFF6E5] hover:bg-[#FEEFC6] px-3 py-1.5 rounded-xl border border-[#FEDF89] transition"
+                    >
+                      Remind Pending ({consolidation.unsubmittedCount})
+                    </button>
+                    <button
+                      onClick={() => setShowShareBox(!showShareBox)}
+                      class="text-xs font-bold text-[#18633B] hover:underline bg-[#ECFDF3] px-3.5 py-1.5 rounded-xl border border-[#D1FADF] transition"
+                    >
+                      Share Link
+                    </button>
+                  </div>
+
+                  {/* Share Link Drawer */}
+                  {showShareBox && (
+                    <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 text-xs space-y-2.5 animate-in fade-in duration-150">
+                      <label class="block text-gray-700 text-[11px] font-bold">
+                        Direct Table Pre-Order Link:
+                      </label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={shareUrl}
+                          class="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-700 flex-1 select-all font-mono"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard?.writeText(shareUrl);
+                            showToast("Link copied to clipboard");
+                          }}
+                          class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold px-4 py-1.5 rounded-xl text-xs shadow-xs transition"
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div class="space-y-1 pt-1">
+                        <span class="block text-[11px] text-gray-500 font-semibold">Send Directly to Guest:</span>
+                        <div class="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => openShareModal('sms')}
+                            class="bg-white hover:bg-gray-100 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 transition border border-gray-200 text-center"
+                          >
+                            SMS
+                          </button>
+                          <button
+                            onClick={() => openShareModal('whatsapp')}
+                            class="bg-[#EBFDF3] hover:bg-[#D1FADF] py-1.5 px-2 rounded-xl font-bold text-[11px] text-[#027A48] transition border border-[#A6F4C5] text-center"
+                          >
+                            WhatsApp
+                          </button>
+                          <button
+                            onClick={() => openShareModal('email')}
+                            class="bg-white hover:bg-gray-100 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 transition border border-gray-200 text-center"
+                          >
+                            Email
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div class="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
                     <span>{syncError ? syncError : `Updated at ${lastSyncTime.toTimeString().split(' ')[0]}`}</span>
