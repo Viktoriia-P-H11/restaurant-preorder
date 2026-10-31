@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green & Tasty - Restaurant & Group Pre-Order</title>
+  <title>Green &amp; Tasty - Restaurant &amp; Group Pre-Order</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -110,6 +110,72 @@
       };
 
       // ----------------------------------------------------
+      // AUTH / USER MODAL STATE (from Figma)
+      // ----------------------------------------------------
+      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+      const [authTab, setAuthTab] = useState('signin'); // 'signin' | 'signup' | 'reset'
+      const [authForm, setAuthForm] = useState({
+        name: 'Jasmine Smith',
+        email: 'jasmine.smith@example.com',
+        password: '',
+        confirmPassword: '',
+        resetCode: ['', '', '', '']
+      });
+
+      // ----------------------------------------------------
+      // RESERVATION & TABLE DETAILS STATE (Customizable by User)
+      // ----------------------------------------------------
+      const [reservationDetails, setReservationDetails] = useState({
+        tableName: "Table #4 (Indoor Lounge) • 6 Seats",
+        occasion: "Birthday Celebration",
+        location: "Main Dining Hall, 140 Rockwell Avenue",
+        startTime: "18:30",
+        endTime: "21:30",
+        guestCount: 5,
+        servingSchedule: "Serve starters upon arrival (18:30), mains at 19:15",
+        specialRequests: "Please arrange festive napkins. Oleg K. has a severe nut allergy."
+      });
+
+      // Edit Modal State
+      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+      const [editForm, setEditForm] = useState({ ...reservationDetails });
+
+      const openEditModal = () => {
+        setEditForm({ ...reservationDetails });
+        setIsEditModalOpen(true);
+      };
+
+      // Payment Mode: 'host' (Host Covers All) | 'split_equal' (Split Bill Evenly) | 'split_custom' (Pay Per Individual Selection)
+      const [paymentMode, setPaymentMode] = useState('host');
+
+      // Dietary & Allergy notes per participant
+      const [guestDietaryNotes, setGuestDietaryNotes] = useState({
+        "owner-session-123": "Dressing on the side, no heavy garlic",
+        "session1": "Vegetarian only; Caesar salad without anchovies",
+        "session2": "Severe nut allergy (walnuts / peanuts)",
+        "session3": "No dietary restrictions"
+      });
+
+      const [editNoteModal, setEditNoteModal] = useState({
+        isOpen: false,
+        guestId: null,
+        guestName: "",
+        note: ""
+      });
+
+      const openEditNoteModal = (person) => {
+        setEditNoteModal({
+          isOpen: true,
+          guestId: person.id,
+          guestName: person.name,
+          note: guestDietaryNotes[person.id] || ""
+        });
+      };
+
+      // Toggle between Active Reservation and Figma Empty State on Reservations Page
+      const [reservationsView, setReservationsView] = useState('active'); // 'active' | 'empty'
+
+      // ----------------------------------------------------
       // DATA: POPULAR DISHES (from Figma)
       // ----------------------------------------------------
       const popularDishes = [
@@ -172,7 +238,7 @@
           name: "48 Rustaveli Avenue",
           rating: "4.9",
           reviewsCount: "128 reviews",
-          hours: "Daily 10:00 – 23:00",
+          hours: "Daily 10:00 - 23:00",
           image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
         },
         {
@@ -180,7 +246,7 @@
           name: "14 Baratashvili Street",
           rating: "4.8",
           reviewsCount: "94 reviews",
-          hours: "Daily 11:00 – 23:00",
+          hours: "Daily 11:00 - 23:00",
           image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
         },
         {
@@ -188,7 +254,7 @@
           name: "9 Abashidze Street",
           rating: "4.9",
           reviewsCount: "142 reviews",
-          hours: "Daily 10:00 – 00:00",
+          hours: "Daily 10:00 - 00:00",
           image: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=600&q=80"
         }
       ];
@@ -221,7 +287,7 @@
       ];
 
       // ----------------------------------------------------
-      // GROUP PRE-ORDER HOMEWORK STATE (Owner Flow)
+      // GROUP PRE-ORDER STATE
       // ----------------------------------------------------
       const [ownerSessionId] = useState("owner-session-123");
       const [groupStatus, setGroupStatus] = useState("Open");
@@ -348,10 +414,10 @@
             </div>
           )}
 
-          {/* GLOBAL NAVBAR (Matching Figma) */}
+          {/* GLOBAL NAVBAR (Matching Figma - Clean, No Homework Badge) */}
           <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xs">
             {/* Logo */}
-            <div class="flex items-center gap-2 cursor-pointer" onClick={() => setActivePage('main')}>
+            <div class="flex items-center gap-2.5 cursor-pointer" onClick={() => setActivePage('main')}>
               <div class="w-8 h-8 rounded-full bg-[#18633B] text-white flex items-center justify-center font-black text-sm">
                 G
               </div>
@@ -380,12 +446,9 @@
               </button>
               <button
                 onClick={() => setActivePage('group-order')}
-                class={`transition pb-1 flex items-center gap-1.5 ${activePage === 'group-order' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+                class={`transition pb-1 ${activePage === 'group-order' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
               >
-                <span>Owner Review</span>
-                <span class="bg-[#ECFDF3] text-[#027A48] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D1FADF]">
-                  Homework
-                </span>
+                Group Pre-Order
               </button>
             </div>
 
@@ -395,13 +458,184 @@
                 onClick={() => setActivePage('group-order')}
                 class="hidden sm:inline-flex bg-[#18633B] hover:bg-[#124B2D] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition"
               >
-                Group Order ($540)
+                Group Order (${consolidation.grandTotal})
               </button>
-              <div class="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-700">
-                W
-              </div>
+
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                title="Account &amp; Sign In"
+                class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 transition text-xs font-semibold text-gray-700"
+              >
+                <div class="w-7 h-7 rounded-full bg-[#18633B] text-white flex items-center justify-center font-bold text-xs">
+                  JS
+                </div>
+                <span class="hidden lg:inline">Jasmine Smith</span>
+              </button>
             </div>
           </nav>
+
+          {/* ========================================================= */}
+          {/* AUTH MODAL (Sign In, Create Account, Reset Password)      */}
+          {/* ========================================================= */}
+          {isAuthModalOpen && (
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl space-y-5 border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <h3 class="font-black text-lg text-gray-900">
+                    {authTab === 'signin' && "Sign In to Your Account"}
+                    {authTab === 'signup' && "Create an Account"}
+                    {authTab === 'reset' && "Reset Your Password"}
+                  </h3>
+                  <button onClick={() => setIsAuthModalOpen(false)} class="text-gray-400 hover:text-gray-600 font-bold text-sm">X</button>
+                </div>
+
+                {/* Tab Switcher */}
+                <div class="flex border-b border-gray-200 text-xs font-bold">
+                  <button
+                    onClick={() => setAuthTab('signin')}
+                    class={`pb-2.5 px-3 transition ${authTab === 'signin' ? 'text-[#18633B] border-b-2 border-[#18633B]' : 'text-gray-400 hover:text-gray-700'}`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => setAuthTab('signup')}
+                    class={`pb-2.5 px-3 transition ${authTab === 'signup' ? 'text-[#18633B] border-b-2 border-[#18633B]' : 'text-gray-400 hover:text-gray-700'}`}
+                  >
+                    Create Account
+                  </button>
+                  <button
+                    onClick={() => setAuthTab('reset')}
+                    class={`pb-2.5 px-3 transition ${authTab === 'reset' ? 'text-[#18633B] border-b-2 border-[#18633B]' : 'text-gray-400 hover:text-gray-700'}`}
+                  >
+                    Reset Password
+                  </button>
+                </div>
+
+                {/* SIGN IN VIEW */}
+                {authTab === 'signin' && (
+                  <div class="space-y-3.5 text-xs">
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Email:</label>
+                      <input
+                        type="email"
+                        value={authForm.email}
+                        onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+                    <div>
+                      <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-gray-700 uppercase text-[11px]">Password:</label>
+                        <button onClick={() => setAuthTab('reset')} class="text-[11px] text-[#18633B] font-semibold hover:underline">
+                          Forgot password?
+                        </button>
+                      </div>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIsAuthModalOpen(false);
+                        showToast(`Signed in as ${authForm.email}`);
+                      }}
+                      class="w-full mt-2 py-3 bg-[#18633B] hover:bg-[#124B2D] text-white font-bold rounded-xl shadow-sm text-xs transition"
+                    >
+                      Sign In
+                    </button>
+                  </div>
+                )}
+
+                {/* CREATE ACCOUNT VIEW */}
+                {authTab === 'signup' && (
+                  <div class="space-y-3.5 text-xs">
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Full Name:</label>
+                      <input
+                        type="text"
+                        value={authForm.name}
+                        onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Email:</label>
+                      <input
+                        type="email"
+                        value={authForm.email}
+                        onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Password:</label>
+                      <input
+                        type="password"
+                        placeholder="Minimum 8 characters"
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIsAuthModalOpen(false);
+                        showToast(`Account created for ${authForm.name}`);
+                      }}
+                      class="w-full mt-2 py-3 bg-[#18633B] hover:bg-[#124B2D] text-white font-bold rounded-xl shadow-sm text-xs transition"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                )}
+
+                {/* RESET PASSWORD VIEW */}
+                {authTab === 'reset' && (
+                  <div class="space-y-3.5 text-xs">
+                    <p class="text-gray-600 text-xs">
+                      Enter your email address and 4-digit verification code to recover your account.
+                    </p>
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Email Address:</label>
+                      <input
+                        type="email"
+                        value={authForm.email}
+                        onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-1.5 uppercase text-[11px]">4-Digit Verification Code:</label>
+                      <div class="flex gap-2 justify-center">
+                        {[0, 1, 2, 3].map((idx) => (
+                          <input
+                            key={idx}
+                            type="text"
+                            maxLength="1"
+                            placeholder="•"
+                            class="w-12 h-12 text-center text-lg font-bold bg-gray-50 border border-gray-300 rounded-xl outline-none focus:border-[#18633B]"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIsAuthModalOpen(false);
+                        showToast("Password reset link sent to your email");
+                      }}
+                      class="w-full mt-2 py-3 bg-[#18633B] hover:bg-[#124B2D] text-white font-bold rounded-xl shadow-sm text-xs transition"
+                    >
+                      Verify &amp; Reset Password
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ========================================================= */}
           {/* PAGE 1: MAIN LANDING PAGE (Exact Figma Design)           */}
@@ -431,7 +665,7 @@
                         onClick={() => setActivePage('group-order')}
                         class="bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-bold text-xs md:text-sm px-6 py-3 rounded-2xl transition"
                       >
-                        Owner Group Review
+                        Group Pre-Order
                       </button>
                     </div>
                   </div>
@@ -511,7 +745,7 @@
                               ★ {loc.rating}
                             </span>
                           </div>
-                          <p class="text-xs text-gray-400 mt-1">{loc.reviewsCount} • {loc.hours}</p>
+                          <p class="text-xs text-gray-400 mt-1">{loc.reviewsCount} &bull; {loc.hours}</p>
                         </div>
                         <button
                           onClick={() => setActivePage('book')}
@@ -589,7 +823,7 @@
                     <button
                       onClick={() => {
                         setSelectedDishModal(null);
-                        showToast(`Added ${dishModalQty} × ${selectedDishModal.name} to pre-order selection`);
+                        showToast(`Added ${dishModalQty} x ${selectedDishModal.name} to pre-order selection`);
                       }}
                       class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
                     >
@@ -641,10 +875,10 @@
                 <div class="border-t border-gray-100 pt-4 space-y-3">
                   <label class="block text-xs font-bold text-gray-700 uppercase">Available Time Slots</label>
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">12:00 – 14:00</button>
-                    <button class="p-3 rounded-xl border border-[#18633B] bg-[#ECFDF3] text-xs font-bold text-[#18633B]">18:30 – 21:30</button>
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">19:00 – 22:00</button>
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">20:00 – 23:00</button>
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">12:00 - 14:00</button>
+                    <button class="p-3 rounded-xl border border-[#18633B] bg-[#ECFDF3] text-xs font-bold text-[#18633B]">18:30 - 21:30</button>
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">19:00 - 22:00</button>
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">20:00 - 23:00</button>
                   </div>
                 </div>
 
@@ -652,7 +886,7 @@
                   <button
                     onClick={() => {
                       setActivePage('group-order');
-                      showToast("Table reserved. Proceeding to Group Pre-Order Owner Review.");
+                      showToast("Table reserved. Proceeding to Group Pre-Order.");
                     }}
                     class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-sm transition"
                   >
@@ -664,42 +898,111 @@
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 3: RESERVATIONS LIST PAGE                             */}
+          {/* PAGE 3: RESERVATIONS LIST PAGE (Matching Figma)           */}
           {/* ========================================================= */}
           {activePage === 'reservations' && (
             <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
-              <div>
-                <h1 class="text-2xl md:text-3xl font-black text-gray-900">Your Reservations</h1>
-                <p class="text-xs text-gray-500 mt-1">Manage booked tables and review guest pre-orders</p>
-              </div>
 
-              <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <span class="font-extrabold text-base text-gray-900">Table #4 (Main Dining Hall)</span>
-                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
-                      Group Active
-                    </span>
-                  </div>
-                  <p class="text-xs text-gray-500">140 Rockwell Avenue • Today, 18:30 – 21:30 • 5 Guests</p>
+              {/* Greeting & Support Contact Banner (From Figma) */}
+              <div class="bg-[#EBF7EE] border border-[#D4EED8] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <h2 class="font-extrabold text-sm text-gray-900">Hello, Jasmine Smith</h2>
+                  <p class="text-gray-500 text-[11px]">Manage your active restaurant bookings and pre-orders</p>
                 </div>
-
-                <button
-                  onClick={() => setActivePage('group-order')}
-                  class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition"
-                >
-                  Open Owner Review &rarr;
-                </button>
+                <div class="bg-white/80 border border-[#D1FADF] px-3 py-1.5 rounded-xl text-[#027A48] text-[11px] font-semibold flex items-center gap-1.5">
+                  <span>Support helpline:</span>
+                  <strong class="font-bold text-[#18633B]">+123 456 678 8899</strong>
+                </div>
               </div>
+
+              {/* View Switcher: Active Bookings vs Empty State Preview */}
+              <div class="flex items-center justify-between">
+                <div>
+                  <h1 class="text-2xl font-black text-gray-900 tracking-tight">Your Reservations</h1>
+                  <p class="text-xs text-gray-500">Track and coordinate pre-orders for your upcoming meals</p>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    onClick={() => setReservationsView(reservationsView === 'active' ? 'empty' : 'active')}
+                    class="text-xs font-bold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-xl transition"
+                  >
+                    {reservationsView === 'active' ? "Preview Empty State" : "Show Active Reservation"}
+                  </button>
+                </div>
+              </div>
+
+              {/* ACTIVE RESERVATIONS VIEW */}
+              {reservationsView === 'active' && (
+                <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                  <div class="space-y-2 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-black text-base text-gray-900">{reservationDetails.tableName}</span>
+                      <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                        {groupStatus === "Open" ? "Pre-Order In Progress" : "Confirmed by Restaurant"}
+                      </span>
+                      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                        {reservationDetails.occasion}
+                      </span>
+                    </div>
+
+                    <div class="text-xs text-gray-500 space-y-0.5">
+                      <p><strong>Location:</strong> {reservationDetails.location}</p>
+                      <p><strong>Time:</strong> Today &bull; {reservationDetails.startTime} &ndash; {reservationDetails.endTime} &bull; <strong>{reservationDetails.guestCount} Guests</strong></p>
+                      <p><strong>Pre-order Total:</strong> ${consolidation.grandTotal}.00 ({consolidation.submittedCount} participants ready)</p>
+                      <p><strong>Pacing:</strong> {reservationDetails.servingSchedule}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex sm:flex-col gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => setActivePage('group-order')}
+                      class="flex-1 sm:flex-initial bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition text-center"
+                    >
+                      Group Pre-Order &rarr;
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActivePage('group-order');
+                        openEditModal();
+                      }}
+                      class="flex-1 sm:flex-initial bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold text-xs px-4 py-2 rounded-xl transition text-center"
+                    >
+                      Edit Info
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* FIGMA EMPTY STATE VIEW */}
+              {reservationsView === 'empty' && (
+                <div class="bg-white rounded-3xl p-10 md:p-14 border border-gray-200 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+                  <div class="w-20 h-20 rounded-full bg-[#EBF7EE] text-[#18633B] flex items-center justify-center font-bold text-2xl border border-[#D4EED8]">
+                    GT
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-black text-gray-900">No Reservations</h3>
+                    <p class="text-xs text-gray-500 mt-1 max-w-sm">
+                      Looks like you haven't made any table reservations yet. Choose a location and reserve your table in just a few clicks!
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActivePage('book')}
+                    class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs px-6 py-3 rounded-2xl shadow-sm transition"
+                  >
+                    Book a Table
+                  </button>
+                </div>
+              )}
+
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 4: GROUP PRE-ORDER (OWNER FLOW HOMEWORK)             */}
+          {/* PAGE 4: GROUP PRE-ORDER (Interactive Host Screen)         */}
           {/* ========================================================= */}
           {activePage === 'group-order' && (
             <div class="flex-1 flex justify-center py-4 md:py-8 px-0 md:px-4">
-              <main class="w-full max-w-[620px] bg-white md:rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+              <main class="w-full max-w-[660px] bg-white md:rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
 
                 {/* Submit Modal */}
                 {isSubmitModalOpen && (
@@ -735,6 +1038,166 @@
                   </div>
                 )}
 
+                {/* Edit Reservation & Schedule Modal */}
+                {isEditModalOpen && (
+                  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto custom-scroll">
+                      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <div>
+                          <h3 class="font-extrabold text-base text-gray-900">Edit Reservation Details</h3>
+                          <p class="text-xs text-gray-500">Update table, occasion, time slot, and serving schedule</p>
+                        </div>
+                        <button onClick={() => setIsEditModalOpen(false)} class="text-gray-400 hover:text-gray-600 font-bold text-sm">X</button>
+                      </div>
+
+                      <div class="space-y-3.5 text-xs">
+                        {/* Occasion / Celebration */}
+                        <div>
+                          <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Occasion / Celebration:</label>
+                          <input
+                            type="text"
+                            value={editForm.occasion}
+                            onChange={(e) => setEditForm({ ...editForm, occasion: e.target.value })}
+                            placeholder="e.g. Birthday Celebration, Dinner with Friends, Business Dinner"
+                            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                          />
+                        </div>
+
+                        {/* Table Selection */}
+                        <div>
+                          <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Assigned Table:</label>
+                          <select
+                            value={editForm.tableName}
+                            onChange={(e) => setEditForm({ ...editForm, tableName: e.target.value })}
+                            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                          >
+                            <option value="Table #4 (Indoor Lounge) • 6 Seats">Table #4 (Indoor Lounge) &bull; 6 Seats</option>
+                            <option value="Table #2 (Garden Terrace) • 4 Seats">Table #2 (Garden Terrace) &bull; 4 Seats</option>
+                            <option value="Table #7 (Main Dining Hall) • 8 Seats">Table #7 (Main Dining Hall) &bull; 8 Seats</option>
+                            <option value="Table #10 (VIP Private Hall) • 12 Seats">Table #10 (VIP Private Hall) &bull; 12 Seats</option>
+                          </select>
+                        </div>
+
+                        {/* Time Slot */}
+                        <div class="grid grid-cols-2 gap-3">
+                          <div>
+                            <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Start Time:</label>
+                            <select
+                              value={editForm.startTime}
+                              onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
+                              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                            >
+                              <option value="18:30">18:30</option>
+                              <option value="19:00">19:00</option>
+                              <option value="20:00">20:00</option>
+                              <option value="12:00">12:00</option>
+                              <option value="13:30">13:30</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">End Time:</label>
+                            <select
+                              value={editForm.endTime}
+                              onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
+                              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                            >
+                              <option value="21:30">21:30</option>
+                              <option value="22:00">22:00</option>
+                              <option value="23:00">23:00</option>
+                              <option value="14:00">14:00</option>
+                              <option value="16:00">16:00</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Serving Schedule / When to serve dishes */}
+                        <div>
+                          <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">When to Serve Dishes (Kitchen Schedule):</label>
+                          <select
+                            value={editForm.servingSchedule}
+                            onChange={(e) => setEditForm({ ...editForm, servingSchedule: e.target.value })}
+                            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                          >
+                            <option value="Serve starters upon arrival (18:30), mains at 19:15">Serve starters upon arrival (18:30), mains at 19:15</option>
+                            <option value="Serve all dishes together once everyone arrives">Serve all dishes together once everyone arrives</option>
+                            <option value="Serve drinks &amp; appetizers first, hot food 30 mins later">Serve drinks &amp; appetizers first, hot food 30 mins later</option>
+                            <option value="Progressive course pacing (Appetizers -> Salads -> Mains -> Dessert)">Progressive course pacing (Appetizers -> Salads -> Mains -> Dessert)</option>
+                          </select>
+                        </div>
+
+                        {/* Special Requests */}
+                        <div>
+                          <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Kitchen Comments &amp; Allergy Details:</label>
+                          <textarea
+                            rows="3"
+                            value={editForm.specialRequests}
+                            onChange={(e) => setEditForm({ ...editForm, specialRequests: e.target.value })}
+                            placeholder="e.g. Birthday candle on dessert. Oleg has severe nut allergy."
+                            class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-900 outline-none focus:border-[#18633B]"
+                          ></textarea>
+                        </div>
+                      </div>
+
+                      <div class="pt-3 border-t border-gray-100 flex justify-end gap-2.5">
+                        <button
+                          onClick={() => setIsEditModalOpen(false)}
+                          class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setReservationDetails({ ...editForm });
+                            setIsEditModalOpen(false);
+                            showToast("Reservation & serving details updated successfully");
+                          }}
+                          class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Participant Note Modal */}
+                {editNoteModal.isOpen && (
+                  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <h3 class="font-extrabold text-sm text-gray-900">Dietary Note: {editNoteModal.guestName}</h3>
+                        <button onClick={() => setEditNoteModal({ isOpen: false, guestId: null, guestName: "", note: "" })} class="text-gray-400 hover:text-gray-600 font-bold text-xs">X</button>
+                      </div>
+                      <p class="text-xs text-gray-500">Provide specific allergy flags or preparation requests for this order:</p>
+                      <textarea
+                        rows="3"
+                        value={editNoteModal.note}
+                        onChange={(e) => setEditNoteModal({ ...editNoteModal, note: e.target.value })}
+                        placeholder="e.g. Severe Nut Allergy, Vegetarian, Dressing on side..."
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs text-gray-900 outline-none focus:border-[#18633B]"
+                      ></textarea>
+                      <div class="flex justify-end gap-2 pt-2">
+                        <button
+                          onClick={() => setEditNoteModal({ isOpen: false, guestId: null, guestName: "", note: "" })}
+                          class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setGuestDietaryNotes(prev => ({ ...prev, [editNoteModal.guestId]: editNoteModal.note }));
+                            setEditNoteModal({ isOpen: false, guestId: null, guestName: "", note: "" });
+                            showToast(`Updated note for ${editNoteModal.guestName}`);
+                          }}
+                          class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                        >
+                          Save Note
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Share / Invite Modal (SMS, WhatsApp, Email, Remind) */}
                 {shareModal.isOpen && (
                   <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -760,13 +1223,12 @@
                               value={shareModal.recipient}
                               onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
                               class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
-                              autoFocus
                             />
                           </div>
                           <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
-                            <span class="font-bold text-gray-700 block">Message Preview:</span>
+                            <span class="font-bold text-gray-800 block">Invitation Message:</span>
                             <p class="text-gray-500 text-[10px] break-all">
-                              "Join table at Green &amp; Tasty: {shareUrl}"
+                              "You are invited to {reservationDetails.tableName} at Green &amp; Tasty ({reservationDetails.occasion}). Join and select your dishes: {shareUrl}"
                             </p>
                           </div>
                           <div class="pt-2 flex justify-end gap-2">
@@ -774,15 +1236,16 @@
                             <button
                               onClick={() => {
                                 const email = shareModal.recipient.trim();
-                                const subject = encodeURIComponent("Group Pre-Order Invitation - Green & Tasty");
-                                const body = encodeURIComponent(`Hello,\n\nYou are invited to join our table at Green & Tasty.\nSelect your dishes here:\n${shareUrl}`);
+                                if (!email) { showToast("Please enter a valid email"); return; }
+                                const subject = encodeURIComponent("Green & Tasty - Group Pre-Order Invitation");
+                                const body = encodeURIComponent(`Hello!\n\nYou're invited to pre-order dishes for ${reservationDetails.tableName} at Green & Tasty:\n${shareUrl}`);
                                 window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
                                 setShareModal({ ...shareModal, isOpen: false });
-                                showToast(email ? `Opening email for ${email}` : "Opening email client");
+                                showToast(`Email client opened for ${email}`);
                               }}
                               class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
                             >
-                              Open in Mail Client
+                              Open Email Client
                             </button>
                           </div>
                         </div>
@@ -792,18 +1255,17 @@
                       {shareModal.channel === 'sms' && (
                         <div class="space-y-3">
                           <div>
-                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Recipient Phone Number {shareModal.guestName ? `(${shareModal.guestName})` : ""}:</label>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Guest Mobile Phone Number:</label>
                             <input
                               type="tel"
-                              placeholder="+380971234567"
+                              placeholder="+1 (555) 000-0000"
                               value={shareModal.recipient}
                               onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
                               class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
-                              autoFocus
                             />
                           </div>
                           <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
-                            <span class="font-bold text-gray-700 block">SMS Preview:</span>
+                            <span class="font-bold text-gray-800 block">SMS Preview:</span>
                             <p class="text-gray-500 text-[10px] break-all">
                               "Join table at Green &amp; Tasty: {shareUrl}"
                             </p>
@@ -905,7 +1367,7 @@
                 )}
 
                 {/* HEADER */}
-                <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3">
+                <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3.5">
                   <div class="flex items-center justify-between">
                     <div>
                       <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">Reservation Pre-Order</span>
@@ -924,12 +1386,48 @@
                     </div>
                   </div>
 
-                  <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 text-xs text-gray-600 space-y-1">
-                    <div class="font-bold text-gray-900">Green &amp; Tasty • Table #4</div>
-                    <div class="text-[11px] text-gray-500">Main Dining Hall, 140 Rockwell Avenue</div>
-                    <div class="flex items-center justify-between pt-1 border-t border-gray-200/60 text-[11px]">
-                      <span>Today • 18:30 – 21:30</span>
-                      <span class="font-semibold text-gray-700">{participants.length} of 5 guests</span>
+                  {/* TABLE & EVENT BANNER WITH EDIT BUTTON */}
+                  <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-xs text-gray-600 space-y-2.5">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="font-extrabold text-sm text-gray-900">{reservationDetails.tableName}</span>
+                          <span class="bg-[#ECFDF3] text-[#027A48] text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-[#D1FADF]">
+                            {reservationDetails.occasion}
+                          </span>
+                        </div>
+                        <div class="text-[11px] text-gray-500 mt-0.5">{reservationDetails.location}</div>
+                      </div>
+                      <button
+                        onClick={openEditModal}
+                        class="bg-white hover:bg-gray-100 text-[#18633B] border border-[#18633B]/40 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition flex-shrink-0"
+                      >
+                        Edit Details &amp; Time
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-gray-200/60 text-[11px]">
+                      <div>
+                        <span class="text-gray-400 block">Table Time Slot:</span>
+                        <span class="font-semibold text-gray-800">Today &bull; {reservationDetails.startTime} &ndash; {reservationDetails.endTime}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-400 block">Guest Progress:</span>
+                        <span class="font-semibold text-gray-800">{participants.length} of {reservationDetails.guestCount} guests</span>
+                      </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-200/60 text-[11px] flex items-center justify-between">
+                      <div>
+                        <span class="text-gray-400">Serving Schedule: </span>
+                        <span class="font-semibold text-gray-900">{reservationDetails.servingSchedule}</span>
+                      </div>
+                      <button
+                        onClick={openEditModal}
+                        class="text-[#18633B] hover:underline font-bold text-[11px]"
+                      >
+                        Change
+                      </button>
                     </div>
                   </div>
 
@@ -1021,6 +1519,156 @@
                     </div>
                   )}
 
+                  {/* PAYMENT MODE SELECTOR (Split Bill vs Host Covers All) */}
+                  <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h3 class="font-extrabold text-xs text-gray-900 uppercase tracking-wider">Payment Mode &amp; Bill Splitting</h3>
+                        <p class="text-[11px] text-gray-500">Choose how the group bill will be settled at the restaurant</p>
+                      </div>
+                      <span class="text-xs font-bold text-[#18633B] bg-[#ECFDF3] px-2.5 py-0.5 rounded-full border border-[#D1FADF]">
+                        Total: ${consolidation.grandTotal}.00
+                      </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Host Covers All */}
+                      <div
+                        onClick={() => { setPaymentMode('host'); showToast("Payment set: Host covers entire bill"); }}
+                        class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                          paymentMode === 'host'
+                            ? 'border-[#18633B] bg-[#ECFDF3]/40 ring-1 ring-[#18633B]'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="font-bold text-xs text-gray-900">Host Covers All</span>
+                          <div class={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                            paymentMode === 'host' ? 'border-[#18633B] bg-[#18633B]' : 'border-gray-300'
+                          }`}>
+                            {paymentMode === 'host' && <div class="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                          </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 leading-tight">Walter pays the full bill ($540.00)</p>
+                        <div class="mt-2 text-[11px] font-bold text-[#18633B]">$540.00 single bill</div>
+                      </div>
+
+                      {/* Split Bill Evenly */}
+                      <div
+                        onClick={() => { setPaymentMode('split_equal'); showToast("Payment set: Split evenly among guests"); }}
+                        class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                          paymentMode === 'split_equal'
+                            ? 'border-[#18633B] bg-[#ECFDF3]/40 ring-1 ring-[#18633B]'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="font-bold text-xs text-gray-900">Split Evenly</span>
+                          <div class={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                            paymentMode === 'split_equal' ? 'border-[#18633B] bg-[#18633B]' : 'border-gray-300'
+                          }`}>
+                            {paymentMode === 'split_equal' && <div class="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                          </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 leading-tight">Divided equally across 5 seats</p>
+                        <div class="mt-2 text-[11px] font-bold text-[#18633B]">${(consolidation.grandTotal / 5).toFixed(2)} / guest</div>
+                      </div>
+
+                      {/* Pay Per Individual Selection */}
+                      <div
+                        onClick={() => { setPaymentMode('split_custom'); showToast("Payment set: Pay per individual dishes"); }}
+                        class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                          paymentMode === 'split_custom'
+                            ? 'border-[#18633B] bg-[#ECFDF3]/40 ring-1 ring-[#18633B]'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="font-bold text-xs text-gray-900">By Own Order</span>
+                          <div class={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                            paymentMode === 'split_custom' ? 'border-[#18633B] bg-[#18633B]' : 'border-gray-300'
+                          }`}>
+                            {paymentMode === 'split_custom' && <div class="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                          </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 leading-tight">Each pays for their dishes</p>
+                        <div class="mt-2 text-[11px] font-bold text-[#18633B]">Individual tabs</div>
+                      </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600">
+                      {paymentMode === 'host' && (
+                        <span>A single consolidated bill for <strong>${consolidation.grandTotal}.00</strong> will be presented to Walter upon arrival.</span>
+                      )}
+                      {paymentMode === 'split_equal' && (
+                        <span>Total <strong>${consolidation.grandTotal}.00</strong> divided equally: <strong>${(consolidation.grandTotal / 5).toFixed(2)}</strong> charged per each of the 5 guests.</span>
+                      )}
+                      {paymentMode === 'split_custom' && (
+                        <span>Separate bills: Walter ($180.00), Andrii ($360.00), Olena ($0.00 pending), Alex ($0.00 pending).</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* KITCHEN PACING & SERVING TIME DROPDOWN */}
+                  <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider">
+                        When to Serve Dishes (Kitchen Schedule)
+                      </label>
+                      <span class="text-[10px] text-gray-400">Pacing option</span>
+                    </div>
+                    <select
+                      value={reservationDetails.servingSchedule}
+                      onChange={(e) => {
+                        setReservationDetails(prev => ({ ...prev, servingSchedule: e.target.value }));
+                        showToast("Serving pacing updated");
+                      }}
+                      class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]"
+                    >
+                      <option value="Serve starters upon arrival (18:30), mains at 19:15">Serve starters upon arrival (18:30), mains at 19:15</option>
+                      <option value="Serve all dishes together once everyone arrives">Serve all dishes together once everyone arrives</option>
+                      <option value="Serve drinks &amp; appetizers first, hot food 30 mins later">Serve drinks &amp; appetizers first, hot food 30 mins later</option>
+                      <option value="Progressive course pacing (Appetizers -> Salads -> Mains -> Dessert)">Progressive course pacing (Appetizers -> Salads -> Mains -> Dessert)</option>
+                    </select>
+                  </div>
+
+                  {/* TABLE DIETARY & ALLERGIES CARD */}
+                  <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h3 class="font-extrabold text-xs text-gray-900 uppercase tracking-wider">Table Dietary &amp; Allergy Flags</h3>
+                        <p class="text-[11px] text-gray-500">Flags passed directly to the restaurant head chef</p>
+                      </div>
+                      <button
+                        onClick={openEditModal}
+                        class="text-xs font-bold text-[#18633B] hover:underline"
+                      >
+                        Edit Instructions
+                      </button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5">
+                      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-200">
+                        Nut Allergy: Oleg K. (Severe)
+                      </span>
+                      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                        Gluten-Free (1 guest)
+                      </span>
+                      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full border bg-[#ECFDF3] text-[#027A48] border-[#D1FADF]">
+                        Vegetarian (2 guests)
+                      </span>
+                      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                        No Cilantro
+                      </span>
+                    </div>
+
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-700">
+                      <span class="font-bold block text-gray-900 mb-0.5">Kitchen Special Instructions:</span>
+                      {reservationDetails.specialRequests}
+                    </div>
+                  </div>
+
+                  {/* PARTICIPANTS LIST */}
                   <div class="space-y-3">
                     <div class="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
                       <span>Participants ({participants.length})</span>
@@ -1080,7 +1728,7 @@
                                         </div>
                                         <div>
                                           <div class="font-medium text-gray-900">{item.dish.name}</div>
-                                          <div class="text-[10px] text-gray-400">Qty: {item.quantity} × ${item.dish.price}.00</div>
+                                          <div class="text-[10px] text-gray-400">Qty: {item.quantity} x ${item.dish.price}.00</div>
                                         </div>
                                       </div>
                                       <span class="font-bold text-gray-800">${item.dish.price * item.quantity}.00</span>
@@ -1091,7 +1739,23 @@
                                 )}
                               </div>
 
-                              <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-900">
+                              {/* Dietary note & edit button for each participant */}
+                              <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                                <div class="flex items-center gap-1.5 text-gray-600">
+                                  <span class="font-bold text-gray-700">Dietary Note:</span>
+                                  <span class="italic text-gray-500">
+                                    {guestDietaryNotes[person.id] || "No dietary restrictions noted"}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => openEditNoteModal(person)}
+                                  class="text-[#18633B] hover:underline font-bold text-[10px] ml-2 flex-shrink-0"
+                                >
+                                  Edit Note
+                                </button>
+                              </div>
+
+                              <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-900">
                                 <span class="text-gray-500 font-normal">Subtotal</span>
                                 <span>${person.total}.00</span>
                               </div>
@@ -1114,7 +1778,7 @@
                         consolidation.dishes.map((dish) => (
                           <div key={dish.dishId} class="pt-1.5 flex items-center justify-between">
                             <span class="text-gray-700 font-medium">
-                              {dish.name} <span class="font-bold text-gray-900">× {dish.quantity}</span>
+                              {dish.name} <span class="font-bold text-gray-900">x {dish.quantity}</span>
                             </span>
                             <span class="font-bold text-gray-900">${dish.total}.00</span>
                           </div>
@@ -1131,7 +1795,11 @@
                   <div class="flex items-center justify-between">
                     <div>
                       <span class="text-[11px] text-gray-500 block">Total for Restaurant:</span>
-                      <span class="text-xs text-gray-400">Submitted carts only</span>
+                      <span class="text-xs text-gray-400">
+                        {paymentMode === 'host' && "Single bill (Walter pays)"}
+                        {paymentMode === 'split_equal' && "Split evenly ($108.00 / guest)"}
+                        {paymentMode === 'split_custom' && "Individual dish subtotals"}
+                      </span>
                     </div>
                     <div class="text-right">
                       <span class="text-2xl font-black text-[#18633B]">${consolidation.grandTotal}.00</span>
