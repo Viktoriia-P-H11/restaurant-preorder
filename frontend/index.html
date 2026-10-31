@@ -46,13 +46,35 @@
       // 2. Спосіб оплати
       const [paymentMode, setPaymentMode] = useState('host');
 
-      // 3. Блокування столу (замовлення відправлено)
+      // 3. Блокування столу (замовлення відправлено на кухню)
       const [isLocked, setIsLocked] = useState(false);
 
       // 4. Панель "Share Link"
       const [showShareBox, setShowShareBox] = useState(false);
 
-      // 5. Тост-повідомлення
+      // Реальне робоче посилання на наш застосунок в AWS!
+      const shareUrl = typeof window !== 'undefined' && window.location.href.startsWith('http')
+        ? window.location.href.split('?')[0]
+        : "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/";
+
+      // 5. Модальне вікно для відправки запрошень (Email, SMS, WhatsApp, Remind)
+      const [shareModal, setShareModal] = useState({
+        isOpen: false,
+        channel: 'email', // 'email' | 'sms' | 'whatsapp' | 'remind'
+        recipient: '',
+        guestName: ''
+      });
+
+      const openShareModal = (channel, defaultRecipient = '', guestName = '') => {
+        setShareModal({
+          isOpen: true,
+          channel,
+          recipient: defaultRecipient,
+          guestName
+        });
+      };
+
+      // 6. Тост-повідомлення
       const [toast, setToast] = useState({ show: false, text: "", icon: "✨" });
 
       const showToast = (text, icon = "✨") => {
@@ -60,7 +82,7 @@
         setTimeout(() => setToast({ show: false, text: "", icon: "✨" }), 3500);
       };
 
-      // 6. Стан розкритих акордеонів гостей (множинне розкриття)
+      // 7. Стан розкритих акордеонів гостей
       const [openGuests, setOpenGuests] = useState({
         anna: true,
         oleg: true,
@@ -72,7 +94,7 @@
         setOpenGuests(prev => ({ ...prev, [id]: !prev[id] }));
       };
 
-      // 7. Список страв хоста (Walter)
+      // 8. Список страв хоста (Walter)
       const [hostDishes, setHostDishes] = useState([
         { id: "h1", name: "Fresh Strawberry Mint Salad", desc: "10 mins • Appetizer", price: 17, emoji: "🥗", qty: 1 },
         { id: "h2", name: "Roasted Sweet Potato & Lentil", desc: "10 mins • Appetizer", price: 10, emoji: "🍠", qty: 1 }
@@ -87,7 +109,7 @@
         showToast("Страву видалено з вашого замовлення", "🗑️");
       };
 
-      // 8. Список гостей та їхніх страв
+      // 9. Список гостей та їхніх страв
       const [guests, setGuests] = useState([
         {
           id: "anna",
@@ -195,11 +217,11 @@
 
           {/* МОДАЛЬНЕ ВІКНО: EDIT EVENT, TABLE & TIME */}
           {isEditModalOpen && (
-            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 border border-gray-100">
                 <div class="flex items-center justify-between pb-2 border-b border-gray-100">
                   <h3 class="font-extrabold text-sm text-gray-900">✏️ Налаштування події та столу</h3>
-                  <button onClick={() => setIsEditModalOpen(false)} class="text-gray-400 hover:text-gray-600 text-sm font-bold">✕</button>
+                  <button onClick={() => setIsEditModalOpen(false)} class="text-gray-400 hover:text-gray-600 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100">✕</button>
                 </div>
 
                 <div>
@@ -261,6 +283,207 @@
             </div>
           )}
 
+          {/* МОДАЛЬНЕ ВІКНО: ЗАПРОШЕННЯ / ВІДПРАВКА ПОСИЛАННЯ / НАГАДУВАННЯ */}
+          {shareModal.isOpen && (
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                  <h3 class="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                    {shareModal.channel === 'email' && '✉️ Надіслати запрошення на Email'}
+                    {shareModal.channel === 'sms' && '💬 Надіслати запрошення по SMS'}
+                    {shareModal.channel === 'whatsapp' && '📱 Надіслати у WhatsApp'}
+                    {shareModal.channel === 'remind' && '⚡ Нагадати гостям про замовлення'}
+                  </h3>
+                  <button
+                    onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                    class="text-gray-400 hover:text-gray-600 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Email Form */}
+                {shareModal.channel === 'email' && (
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">
+                        Куди відправити? (Email адреса гостя):
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="наприклад: friend@gmail.com"
+                        value={shareModal.recipient}
+                        onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
+                      <span class="font-bold text-gray-700 block">Попередній перегляд повідомлення:</span>
+                      <p class="text-gray-500 text-[10px] break-all">
+                        "Привіт! Приєднуйся до нашого столу '{eventName}' ({selectedTable})! Обирай страви за посиланням: {shareUrl}"
+                      </p>
+                    </div>
+                    <div class="pt-2 flex justify-end gap-2">
+                      <button
+                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                      >
+                        Скасувати
+                      </button>
+                      <button
+                        onClick={() => {
+                          const email = shareModal.recipient.trim();
+                          const subject = encodeURIComponent(`Запрошення до замовлення столу в Green & Tasty`);
+                          const body = encodeURIComponent(`Привіт!\n\nПриєднуйся до нашого столу "${eventName}" (${selectedTable})!\nОбери страви у нашій спільній корзині за цим посиланням:\n${shareUrl}\n\nЧекаємо на тебе!`);
+                          window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                          setShareModal({ ...shareModal, isOpen: false });
+                          showToast(email ? `Відкриваю пошту для ${email}...` : "Відкриваю поштовий клієнт...", "✉️");
+                        }}
+                        class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm flex items-center gap-1.5 transition"
+                      >
+                        ✉️ Відкрити в пошті
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* SMS Form */}
+                {shareModal.channel === 'sms' && (
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">
+                        Номер телефону гостя {shareModal.guestName ? `(${shareModal.guestName})` : ""}:
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="наприклад: +380971234567"
+                        value={shareModal.recipient}
+                        onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
+                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
+                      <span class="font-bold text-gray-700 block">Попередній перегляд SMS:</span>
+                      <p class="text-gray-500 text-[10px] break-all">
+                        "Приєднуйся до столу Green & Tasty: {shareUrl}"
+                      </p>
+                    </div>
+                    <div class="pt-2 flex justify-end gap-2">
+                      <button
+                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                      >
+                        Скасувати
+                      </button>
+                      <button
+                        onClick={() => {
+                          const phone = shareModal.recipient.trim();
+                          const text = encodeURIComponent(`Приєднуйся до столу Green & Tasty: ${shareUrl}`);
+                          window.location.href = phone ? `sms:${phone}?body=${text}` : `sms:?body=${text}`;
+                          setShareModal({ ...shareModal, isOpen: false });
+                          showToast(phone ? `Відкриваю SMS для ${phone}...` : "Відкриваю SMS...", "💬");
+                        }}
+                        class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm flex items-center gap-1.5 transition"
+                      >
+                        💬 Відкрити SMS
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* WhatsApp Form */}
+                {shareModal.channel === 'whatsapp' && (
+                  <div class="space-y-3">
+                    <p class="text-xs text-gray-600">
+                      При натисканні відкриється WhatsApp, де ви зможете обрати будь-якого друга або спільний чат зі списку ваших контактів.
+                    </p>
+                    <div class="bg-[#EBFDF3] p-2.5 rounded-xl border border-[#A6F4C5] text-[11px] text-[#027A48] space-y-1">
+                      <span class="font-bold block">Текст повідомлення у WhatsApp:</span>
+                      <p class="italic text-[10px] break-all">
+                        "Привіт! Приєднуйся до нашого столу в ресторані Green & Tasty! Ось посилання для вибору страв: {shareUrl}"
+                      </p>
+                    </div>
+                    <div class="pt-2 flex justify-end gap-2">
+                      <button
+                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                      >
+                        Скасувати
+                      </button>
+                      <button
+                        onClick={() => {
+                          const text = encodeURIComponent(`Привіт! Приєднуйся до нашого столу в ресторані Green & Tasty! Ось посилання для вибору страв: ${shareUrl}`);
+                          window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+                          setShareModal({ ...shareModal, isOpen: false });
+                          showToast("Відкриваю WhatsApp для вибору контакту...", "📱");
+                        }}
+                        class="px-4 py-2 text-xs font-bold bg-[#027A48] hover:bg-[#05603A] text-white rounded-xl shadow-sm flex items-center gap-1.5 transition"
+                      >
+                        📱 Відкрити WhatsApp
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Remind Form */}
+                {shareModal.channel === 'remind' && (
+                  <div class="space-y-3">
+                    <p class="text-xs text-gray-600">
+                      Гості, які ще не завершили вибір страв:
+                    </p>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                        <div>
+                          <span class="font-bold text-amber-900 block">Dmitry (Pending)</span>
+                          <span class="text-[10px] text-amber-700">+380 (97) ••• •• 45</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const text = encodeURIComponent(`Дмитро, привіт! Нагадуємо обрати страви до нашого замовлення столу Green & Tasty: ${shareUrl}`);
+                            window.location.href = `sms:+380970000045?body=${text}`;
+                            setShareModal({ ...shareModal, isOpen: false });
+                            showToast("SMS-нагадування для Dmitry відкрито!", "💬");
+                          }}
+                          class="bg-white hover:bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-lg border border-amber-300 text-[11px] shadow-sm"
+                        >
+                          💬 Надіслати SMS
+                        </button>
+                      </div>
+                      <div class="flex items-center justify-between p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                        <div>
+                          <span class="font-bold text-amber-900 block">Oleg Kovalenko (Choosing)</span>
+                          <span class="text-[10px] text-amber-700">+380 (67) ••• •• 88</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const text = encodeURIComponent(`Олег, привіт! Нагадуємо підтвердити страви до замовлення столу Green & Tasty: ${shareUrl}`);
+                            window.location.href = `sms:+380670000088?body=${text}`;
+                            setShareModal({ ...shareModal, isOpen: false });
+                            showToast("SMS-нагадування для Oleg відкрито!", "💬");
+                          }}
+                          class="bg-white hover:bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-lg border border-amber-300 text-[11px] shadow-sm"
+                        >
+                          💬 Надіслати SMS
+                        </button>
+                      </div>
+                    </div>
+                    <div class="pt-2 flex justify-end">
+                      <button
+                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                        class="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl"
+                      >
+                        Закрити
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
           {/* ШАПКА КОРЗИНИ (Cart & GROUP ORDER) */}
           <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white">
             <div class="flex items-center gap-2.5">
@@ -269,65 +492,86 @@
                 GROUP ORDER
               </span>
             </div>
-            <button onClick={() => showToast("Корзину закрито")} class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
-              ✕
+            <button
+              onClick={() => showToast("Корзина оновлена до останнього стану!", "🔄")}
+              class="text-xs text-gray-500 hover:text-gray-800 font-semibold px-2.5 py-1 rounded-lg hover:bg-gray-100 transition"
+            >
+              🔄 Refresh
             </button>
           </div>
 
-          {/* ОСНОВНА ЧАСТИНА З ПРОКРУТКОЮ */}
+          {/* ОСНОВНА ПРОКРУЧУВАНА ЧАСТИНА */}
           <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
 
-            {/* 1. КАРТКА ПОДІЇ ТА СТОЛУ */}
-            <div class="bg-[#F8FAF9] border border-gray-200/70 rounded-2xl p-3.5 relative shadow-sm">
-              <div class="flex items-start justify-between">
-                <div>
-                  <div class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                    <span>🎉 {eventName}</span>
-                    <span class="text-gray-400 font-normal text-xs">• Walter (Host)</span>
-                  </div>
-                  <div class="mt-2 flex items-center gap-2 flex-wrap">
-                    <span class="text-xs text-gray-600 flex items-center gap-1 font-medium">
-                      📅 Today, Oct 24
-                    </span>
-                    <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] font-bold px-2 py-0.5 rounded text-[11px]">
-                      {selectedTimeSlot}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  class="text-xs font-bold text-[#027A48] hover:underline flex items-center gap-0.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition"
-                >
-                  Edit ✏️
-                </button>
-              </div>
-              <div class="mt-2.5 pt-2 border-t border-gray-200/60 text-[11px] text-gray-600 flex items-center justify-between">
-                <span>📍 {selectedTable}</span>
-                <span class="font-semibold text-gray-700">6 Guests Reserved</span>
-              </div>
-            </div>
-
-            {/* 2. ТАЙМЕР ДЕДЛАЙНУ КУХНІ */}
-            <div class="bg-[#ECFDF3] border border-[#A6F4C5] rounded-2xl p-3 flex items-start gap-2.5">
-              <span class="text-lg mt-0.5">⏱️</span>
-              <div class="flex-1">
-                <div class="flex items-center justify-between">
-                  <h4 class="font-bold text-[#054F31] text-xs">Free edits open until 16:30</h4>
-                  <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    45m left
-                  </span>
-                </div>
-                <p class="text-[11px] text-[#054F31]/80 mt-0.5 leading-tight">
-                  Pre-orders lock 2 hours before arrival for kitchen prep.
+            {/* 1. БАНЕР ПОДІЇ ТА СТОЛУ */}
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-3.5 flex items-center justify-between">
+              <div>
+                <h2 class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                  <span>🎉</span>
+                  <span>{eventName}</span>
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  {selectedTable} • {selectedTimeSlot.split(' ')[0]}
                 </p>
               </div>
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                class="text-xs text-[#027A48] font-bold hover:underline bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition"
+              >
+                ✏️ Edit
+              </button>
             </div>
 
-            {/* 3. ПРОГРЕС ГОТОВНОСТІ СТОЛУ ТА ДІЇ */}
-            <div class="bg-white border border-gray-200 rounded-2xl p-3.5 shadow-sm">
-              <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="font-bold text-gray-900 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-[#12B76A] animate-pulse"></span>
+            {/* 2. БЛОК ХОСТА (WALTER / YOU) */}
+            <div class="border border-gray-200 rounded-2xl p-3.5 space-y-2.5 bg-white">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-[#18633B] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                    W
+                  </div>
+                  <div>
+                    <span class="font-bold text-xs text-gray-900">Walter (You)</span>
+                    <span class="ml-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      Host
+                    </span>
+                  </div>
+                </div>
+                <div class="text-xs font-extrabold text-gray-900">
+                  ${hostTotal}.00
+                </div>
+              </div>
+
+              {/* Страви хоста */}
+              <div class="space-y-1.5 pl-2 border-l-2 border-emerald-600">
+                {hostDishes.map((dish) => (
+                  <div key={dish.id} class="flex items-center justify-between text-xs py-1 group hover:bg-gray-50 rounded-lg px-1 transition">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm">{dish.emoji}</span>
+                      <div>
+                        <div class="font-medium text-gray-800">{dish.name}</div>
+                        <div class="text-[10px] text-gray-400">{dish.desc}</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-gray-700">${dish.price}.00</span>
+                      <button
+                        onClick={() => removeHostDish(dish.id)}
+                        title="Видалити страву"
+                        class="text-gray-300 hover:text-red-500 text-xs px-1 font-bold transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. КАРТКА ПРОГРЕСУ ГРУПИ ТА SHARE LINK */}
+            <div class="border border-gray-200 rounded-2xl p-3.5 bg-white">
+              <div class="flex items-center justify-between text-xs mb-1.5 font-bold">
+                <span class="text-gray-900 flex items-center gap-1.5">
+                  <span class="text-emerald-700 font-extrabold">●</span>
                   Group Progress: 4 of 6 Ready
                 </span>
                 <span class="text-gray-400 text-[11px]">2 still choosing</span>
@@ -340,7 +584,7 @@
 
               <div class="flex items-center justify-between pt-0.5">
                 <button
-                  onClick={() => showToast("⚡ Нагадування надіслано в SMS для Oleg та Dmitry!", "📱")}
+                  onClick={() => openShareModal('remind')}
                   class="text-xs bg-[#FFF6E5] hover:bg-[#FEEFC6] text-[#B54708] font-bold px-3 py-1.5 rounded-xl border border-[#FEDF89] flex items-center gap-1 transition"
                 >
                   ⚡ Remind Pending (2)
@@ -353,32 +597,52 @@
                 </button>
               </div>
 
-              {/* РОЗКРИВНА ПАНЕЛЬ SHARE LINK */}
+              {/* РОЗКРИВНА ПАНЕЛЬ SHARE LINK (РЕАЛЬНІ ПОСИЛАННЯ) */}
               {showShareBox && (
-                <div class="mt-3 pt-3 border-t border-gray-100 text-xs space-y-2">
-                  <label class="block text-gray-500 text-[11px] font-semibold">Пряме посилання для друзів за цим столом:</label>
+                <div class="mt-3 pt-3 border-t border-gray-100 text-xs space-y-2.5">
+                  <label class="block text-gray-600 text-[11px] font-bold">
+                    Пряме посилання для друзів за цим столом:
+                  </label>
                   <div class="flex items-center gap-1.5">
                     <input
                       type="text"
                       readOnly
-                      value="https://greentasty.com/order/table4-walter-99"
-                      class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-600 flex-1 select-all font-mono"
+                      value={shareUrl}
+                      class="bg-gray-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-700 flex-1 select-all font-mono"
                     />
                     <button
                       onClick={() => {
-                        navigator.clipboard?.writeText("https://greentasty.com/order/table4-walter-99");
-                        showToast("📋 Посилання скопійовано в буфер!", "✓");
+                        navigator.clipboard?.writeText(shareUrl);
+                        showToast("📋 Справжнє посилання скопійовано!", "✓");
                       }}
-                      class="bg-[#18633B] hover:bg-[#124b2d] text-white font-bold px-3 py-1 rounded-lg text-xs"
+                      class="bg-[#18633B] hover:bg-[#124b2d] text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition"
                     >
                       Copy
                     </button>
                   </div>
-                  <div class="flex items-center gap-1.5 text-[11px] text-gray-500 pt-1">
-                    <span>Швидка відправка:</span>
-                    <button onClick={() => showToast("Запрошення відправлено через SMS!", "💬")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">💬 SMS</button>
-                    <button onClick={() => showToast("Запрошення відправлено у WhatsApp!", "📱")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">📱 WhatsApp</button>
-                    <button onClick={() => showToast("Запрошення відправлено на Email!", "✉️")} class="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded font-medium">✉️ Email</button>
+                  
+                  <div class="space-y-1.5 pt-1">
+                    <span class="block text-[11px] text-gray-500 font-semibold">Надіслати прямо гостю:</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                      <button
+                        onClick={() => openShareModal('sms')}
+                        class="bg-gray-100 hover:bg-gray-200 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 flex items-center justify-center gap-1 transition border border-gray-200"
+                      >
+                        💬 SMS
+                      </button>
+                      <button
+                        onClick={() => openShareModal('whatsapp')}
+                        class="bg-[#EBFDF3] hover:bg-[#D1FADF] py-1.5 px-2 rounded-xl font-bold text-[11px] text-[#027A48] flex items-center justify-center gap-1 transition border border-[#A6F4C5]"
+                      >
+                        📱 WhatsApp
+                      </button>
+                      <button
+                        onClick={() => openShareModal('email')}
+                        class="bg-gray-100 hover:bg-gray-200 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 flex items-center justify-center gap-1 transition border border-gray-200"
+                      >
+                        ✉️ Email
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -413,146 +677,103 @@
               </div>
             </div>
 
-            {/* 5. ЗАМОВЛЕННЯ ХОСТА (WALTER) */}
-            <div class="border border-[#A6F4C5] rounded-2xl overflow-hidden bg-white shadow-sm">
-              <div class="bg-[#ECFDF3]/80 px-3.5 py-2.5 flex items-center justify-between border-b border-[#A6F4C5]/60">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-full bg-[#18633B] text-white font-bold text-xs flex items-center justify-center">
-                    W
-                  </div>
-                  <div class="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                    <span>My Pre-Order (Walter)</span>
-                    <span class="bg-[#18633B] text-white font-bold text-[9px] uppercase px-1.5 py-0.2 rounded">
-                      HOST
-                    </span>
-                  </div>
-                </div>
-                <span class="text-xs font-bold text-[#18633B]">${hostTotal}.00</span>
-              </div>
+            {/* 5. АКОРДЕОНИ ГОСТЕЙ (GUESTS DISHES) */}
+            <div class="space-y-2">
+              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                GUESTS & DISHES ({guests.length})
+              </label>
 
-              {/* Блюда Вальтера */}
-              <div class="p-3 space-y-2.5 divide-y divide-gray-100">
-                {hostDishes.map((dish) => (
-                  <div key={dish.id} class="flex items-center justify-between text-xs pt-1.5">
-                    <div class="flex items-center gap-2">
-                      <span class="text-lg">{dish.emoji}</span>
-                      <div>
-                        <div class="font-bold text-gray-900">{dish.name}</div>
-                        <div class="text-[10px] text-gray-400">{dish.desc}</div>
+              {guests.map((guest) => {
+                const isOpen = openGuests[guest.id];
+                return (
+                  <div key={guest.id} class="border border-gray-200 rounded-2xl bg-white overflow-hidden transition-all shadow-xs">
+                    {/* Клікабельний заголовок гостя */}
+                    <div
+                      onClick={() => toggleGuest(guest.id)}
+                      class="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 select-none transition"
+                    >
+                      <div class="flex items-center gap-2.5">
+                        <div class={`w-7 h-7 rounded-full ${guest.color} font-bold text-xs flex items-center justify-center`}>
+                          {guest.initials}
+                        </div>
+                        <div>
+                          <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-xs text-gray-900">{guest.name}</span>
+                            <span class={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${guest.statusBadge}`}>
+                              {guest.status}
+                            </span>
+                          </div>
+                          <div class="text-[10px] text-gray-400">
+                            {guest.dishes.length} {guest.dishes.length === 1 ? 'item' : 'items'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-xs text-gray-900">${guest.total}.00</span>
+                        <span class={`text-xs text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                          ▼
+                        </span>
                       </div>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                      <span class="font-bold text-gray-900">${dish.price}</span>
-                      <button
-                        onClick={() => removeHostDish(dish.id)}
-                        class="text-gray-300 hover:text-red-500 text-xs p-1 transition"
-                        title="Видалити страву"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* 6. ЗАМОВЛЕННЯ ГОСТЕЙ (GUEST ORDERS) */}
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  GUEST ORDERS ({guests.length} GUESTS)
-                </label>
-                <button
-                  onClick={() => {
-                    const newName = prompt("Введіть ім'я нового гостя:", "Дмитро");
-                    if (newName) {
-                      showToast(`👤 Гостя ${newName} додано! Тепер можна обрати страви`, "✓");
-                    }
-                  }}
-                  class="text-xs text-[#027A48] font-bold hover:underline"
-                >
-                  + Add for Guest
-                </button>
-              </div>
-
-              {/* КАРТКИ ГОСТЕЙ */}
-              {guests.map((g) => (
-                <div key={g.id} class="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                  {/* Заголовок картки гостя */}
-                  <div
-                    onClick={() => toggleGuest(g.id)}
-                    class="bg-[#F8FAF9] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
-                  >
-                    <div class="flex items-center gap-2">
-                      <div class={`w-6 h-6 rounded-full ${g.color} font-bold text-[10px] flex items-center justify-center`}>
-                        {g.initials}
-                      </div>
-                      <span class="font-bold text-gray-900 text-xs">{g.name}</span>
-                      <span class={`${g.statusBadge} text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1`}>
-                        <span class={`w-1.5 h-1.5 rounded-full ${g.statusDot}`}></span>
-                        {g.status}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs font-bold text-gray-900">${g.total}.00</span>
-                      <span class="text-xs text-gray-400">{openGuests[g.id] ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-
-                  {/* Розкритий список страв гостя */}
-                  {openGuests[g.id] && (
-                    <div class="p-3 space-y-2 border-t border-gray-100 divide-y divide-gray-50">
-                      {g.dishes.length === 0 ? (
-                        <div class="text-[11px] text-gray-400 py-1">Гість ще не додав страви</div>
-                      ) : (
-                        g.dishes.map((dish) => (
-                          <div key={dish.id} class="flex items-center justify-between text-xs pt-1.5">
-                            <div class="flex items-center gap-2">
-                              <span class="text-base">{dish.emoji}</span>
-                              <div>
-                                <div class="font-medium text-gray-800">{dish.name}</div>
-                                <div class="text-[10px] text-gray-400">{dish.desc}</div>
+                    {/* Розкривний список страв */}
+                    {isOpen && (
+                      <div class="px-3 pb-3 pt-1 border-t border-gray-100 bg-gray-50/50 space-y-1.5">
+                        {guest.dishes.length === 0 ? (
+                          <p class="text-[11px] text-gray-400 italic py-1">Ще не обрано жодної страви</p>
+                        ) : (
+                          guest.dishes.map((dish) => (
+                            <div key={dish.id} class="flex items-center justify-between text-xs py-1 group bg-white p-2 rounded-xl border border-gray-100 shadow-xs">
+                              <div class="flex items-center gap-2">
+                                <span class="text-sm">{dish.emoji}</span>
+                                <div>
+                                  <div class="font-medium text-gray-800">{dish.name}</div>
+                                  <div class="text-[10px] text-gray-400">{dish.desc}</div>
+                                </div>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                <span class="font-bold text-gray-700">${dish.price}.00</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeGuestDish(guest.id, dish.id);
+                                  }}
+                                  title="Видалити страву гостя"
+                                  class="text-gray-300 hover:text-red-500 text-xs px-1 font-bold transition"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             </div>
-                            <div class="flex items-center gap-2.5">
-                              <span class="font-bold text-gray-900">${dish.price}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeGuestDish(g.id, dish.id);
-                                }}
-                                class="text-gray-300 hover:text-red-500 text-xs p-1 transition"
-                                title="Видалити страву"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-              {/* Гість: Dmitry Tarasov (Not joined) */}
-              <div class="border border-dashed border-gray-300 rounded-2xl p-3 bg-gray-50/70 flex items-center justify-between text-xs shadow-sm">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 font-bold text-[10px] flex items-center justify-center">
-                    DT
+            {/* 6. ГІСТЬ, ЯКИЙ ОЧІКУЄ (DMYTRO - PENDING) */}
+            <div class="border border-dashed border-gray-300 rounded-2xl p-3 bg-gray-50/60">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-500 font-bold text-xs flex items-center justify-center">
+                    DK
                   </div>
                   <div>
-                    <div class="font-bold text-gray-700 flex items-center gap-1.5">
-                      <span>Dmitry Tarasov</span>
-                      <span class="bg-gray-200 text-gray-600 text-[9px] font-semibold px-1.5 py-0.2 rounded">
-                        Not joined
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-bold text-xs text-gray-600">Dmytro</span>
+                      <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                        Pending
                       </span>
                     </div>
                     <div class="text-[10px] text-gray-400">Invited via +380 97 ••• •• 45</div>
                   </div>
                 </div>
                 <button
-                  onClick={() => showToast("📲 SMS-запрошення повторно надіслано Дмитру!", "💬")}
+                  onClick={() => openShareModal('sms', '+380970000045', 'Dmytro')}
                   class="text-[11px] bg-white hover:bg-gray-100 text-emerald-900 font-bold px-2.5 py-1 rounded-lg border border-gray-200 transition shadow-sm"
                 >
                   Resend SMS 💬
