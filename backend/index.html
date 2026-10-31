@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Green & Tasty - Group Order Cart</title>
+
+  <!-- 1. Tailwind CSS для стилізації -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 2. React 18 та ReactDOM через CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- 3. Babel для підтримки JSX прямо в браузері -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Шрифт Plus Jakarta Sans як у макеті -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-0 md:p-6">
+
+  <!-- Контейнер, куди монтується наш React додаток -->
+  <div id="root" class="w-full max-w-[440px] bg-white shadow-2xl rounded-none md:rounded-3xl border border-gray-200 overflow-hidden flex flex-col max-h-[100vh] md:max-h-[92vh]"></div>
+
+  <!-- ГОЛОВНИЙ REACT КОД НА JSX -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // URL нашого реального бекенду в AWS Lambda!
+    const API_URL = "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/guest/groups/group123/sessions";
+
+    function App() {
+      // 1. Стан: назва свята та столу (можна редагувати!)
+      const [eventName, setEventName] = useState("Birthday Celebration");
+      const [tableName, setTableName] = useState("Table #4 (Indoor Lounge)");
+      const [isEditingEvent, setIsEditingEvent] = useState(false);
+
+      // 2. Стан: спосіб оплати ('host' або 'split')
+      const [paymentMode, setPaymentMode] = useState('host');
+
+      // 3. Стан: розкриті картки гостей (для акордеону)
+      const [expandedGuest, setExpandedGuest] = useState('anna');
+
+      // 4. Стан: статус підтвердження всього столу
+      const [isLocked, setIsLocked] = useState(false);
+
+      // 5. Стан: дані з нашого AWS бекенду
+      const [backendData, setBackendData] = useState(null);
+
+      // Завантажуємо реальні дані з нашого AWS бекенду через fetch
+      useEffect(() => {
+        fetch(API_URL)
+          .then(res => res.json())
+          .then(data => {
+            console.log("Дані з AWS Lambda:", data);
+            setBackendData(data);
+          })
+          .catch(err => console.log("Бекенд оффлайн або помилка:", err));
+      }, []);
+
+      return (
+        <div class="flex flex-col h-full overflow-hidden bg-white">
+          
+          {/* ШАПКА КОРЗИНИ (Cart & GROUP ORDER) */}
+          <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white">
+            <div class="flex items-center gap-2.5">
+              <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Cart</h1>
+              <span class="bg-[#ECFDF3] text-[#027A48] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#D1FADF]">
+                GROUP ORDER
+              </span>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
+              ✕
+            </button>
+          </div>
+
+          {/* ОСНОВНА ЧАСТИНА З ПРОКРУТКОЮ */}
+          <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
+
+            {/* 1. КАРТКА ПОДІЇ ТА СТОЛУ (З РЕЖИМОМ РЕДАГУВАННЯ!) */}
+            <div class="bg-[#F8FAF9] border border-gray-200/70 rounded-2xl p-3.5 relative shadow-sm">
+              {isEditingEvent ? (
+                /* ФОРМА РЕДАГУВАННЯ */
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-[#18633B] uppercase tracking-wide">
+                      ✏️ Редагування події та столу
+                    </span>
+                    <button
+                      onClick={() => setIsEditingEvent(false)}
+                      class="text-xs bg-[#18633B] hover:bg-[#13502f] text-white font-bold px-3 py-1 rounded-lg transition shadow-sm"
+                    >
+                      Save ✓
+                    </button>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-gray-500 font-semibold mb-0.5">Назва події:</label>
+                    <input
+                      type="text"
+                      value={eventName}
+                      onChange={(e) => setEventName(e.target.value)}
+                      class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-900 focus:border-[#18633B] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-gray-500 font-semibold mb-0.5">Номер та локація столу:</label>
+                    <input
+                      type="text"
+                      value={tableName}
+                      onChange={(e) => setTableName(e.target.value)}
+                      class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs text-gray-800 focus:border-[#18633B] outline-none"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ЗВИЧАЙНИЙ ВИГЛЯД */
+                <div>
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                        <span>🎉 {eventName}</span>
+                        <span class="text-gray-400 font-normal text-xs">• Walter (Host)</span>
+                      </div>
+                      <div class="mt-2 flex items-center gap-2 flex-wrap">
+                        <span class="text-xs text-gray-600 flex items-center gap-1 font-medium">
+                          📅 Today, Oct 24
+                        </span>
+                        <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] font-bold px-2 py-0.5 rounded text-[11px]">
+                          18:30 – 21:30 (3h slot)
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsEditingEvent(true)}
+                      class="text-xs font-semibold text-[#027A48] hover:underline flex items-center gap-0.5"
+                    >
+                      Edit ✏️
+                    </button>
+                  </div>
+                  <div class="mt-2.5 pt-2 border-t border-gray-200/60 text-[11px] text-gray-500 flex items-center justify-between">
+                    <span>📍 {tableName}</span>
+                    <span class="font-semibold text-gray-700">6 Seats</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. ТАЙМЕР ДЕДЛАЙНУ КУХНІ */}
+            <div class="bg-[#ECFDF3] border border-[#A6F4C5] rounded-2xl p-3 flex items-start gap-2.5">
+              <span class="text-lg mt-0.5">⏱️</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-bold text-[#054F31] text-xs">Free edits open until 16:30</h4>
+                  <span class="bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    45m left
+                  </span>
+                </div>
+                <p class="text-[11px] text-[#054F31]/80 mt-0.5 leading-tight">
+                  Pre-orders lock 2 hours before arrival for kitchen prep.
+                </p>
+              </div>
+            </div>
+
+            {/* 3. ПРОГРЕС ГОТОВНОСТІ СТОЛУ */}
+            <div class="bg-white border border-gray-200 rounded-2xl p-3.5 shadow-sm">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-bold text-gray-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#12B76A] animate-pulse"></span>
+                  Group Progress: 4 of 6 Ready
+                </span>
+                <span class="text-gray-400 text-[11px]">2 still choosing</span>
+              </div>
+
+              {/* Прогрес бар */}
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-3 overflow-hidden">
+                <div class="bg-[#18633B] h-2 rounded-full transition-all duration-500" style={{ width: '66.6%' }}></div>
+              </div>
+
+              <div class="flex items-center justify-between pt-0.5">
+                <button class="text-xs bg-[#FFF6E5] hover:bg-[#FEEFC6] text-[#B54708] font-bold px-3 py-1.5 rounded-xl border border-[#FEDF89] flex items-center gap-1 transition">
+                  ⚡ Remind Pending (2)
+                </button>
+                <button class="text-xs text-[#027A48] font-semibold hover:underline flex items-center gap-1">
+                  🔗 Share Link
+                </button>
+              </div>
+            </div>
+
+            {/* 4. СПОСІБ ОПЛАТИ (PAYMENT MODE) */}
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                PAYMENT MODE
+              </label>
+              <div class="grid grid-cols-2 gap-1.5 bg-gray-100/80 p-1 rounded-2xl text-xs font-semibold">
+                <button
+                  onClick={() => setPaymentMode('host')}
+                  class={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    paymentMode === 'host'
+                      ? 'bg-white text-[#18633B] shadow-sm font-bold border border-gray-200/50'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  🎉 Host Covers All
+                </button>
+                <button
+                  onClick={() => setPaymentMode('split')}
+                  class={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    paymentMode === 'split'
+                      ? 'bg-white text-[#18633B] shadow-sm font-bold border border-gray-200/50'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  🧾 Split Per Guest
+                </button>
+              </div>
+            </div>
+
+            {/* 5. ЗАМОВЛЕННЯ ХОСТА (WALTER) */}
+            <div class="border border-[#A6F4C5] rounded-2xl overflow-hidden bg-white shadow-sm">
+              <div class="bg-[#ECFDF3]/80 px-3.5 py-2.5 flex items-center justify-between border-b border-[#A6F4C5]/60">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-[#18633B] text-white font-bold text-xs flex items-center justify-center">
+                    W
+                  </div>
+                  <div class="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                    <span>My Pre-Order (Walter)</span>
+                    <span class="bg-[#18633B] text-white font-bold text-[9px] uppercase px-1.5 py-0.2 rounded">
+                      HOST
+                    </span>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-[#18633B]">$27.00</span>
+              </div>
+
+              {/* Блюда Вальтера */}
+              <div class="p-3 space-y-2.5 divide-y divide-gray-100">
+                <div class="flex items-center justify-between text-xs pt-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🥗</span>
+                    <div>
+                      <div class="font-bold text-gray-900">Fresh Strawberry Mint Salad</div>
+                      <div class="text-[10px] text-gray-400">10 mins • 1 portion</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900">$17</span>
+                    <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs pt-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🍠</span>
+                    <div>
+                      <div class="font-bold text-gray-900">Roasted Sweet Potato & Lentil</div>
+                      <div class="text-[10px] text-gray-400">10 mins • 1 portion</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900">$10</span>
+                    <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 6. ЗАМОВЛЕННЯ ГОСТЕЙ (GUEST ORDERS) */}
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  GUEST ORDERS (5 GUESTS)
+                </label>
+                <button class="text-xs text-[#027A48] font-bold hover:underline">
+                  + Add for Guest
+                </button>
+              </div>
+
+              {/* Гість 1: Anna Melnyk (Ready) */}
+              <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div
+                  onClick={() => setExpandedGuest(expandedGuest === 'anna' ? null : 'anna')}
+                  class="bg-[#F8FAF9] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px] flex items-center justify-center">
+                      AM
+                    </div>
+                    <span class="font-bold text-gray-900 text-xs">Anna Melnyk</span>
+                    <span class="bg-[#ECFDF3] text-[#027A48] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#D1FADF]">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#12B76A]"></span>
+                      Ready
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-gray-900">$32.00</span>
+                    <span class="text-xs text-gray-400">{expandedGuest === 'anna' ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+
+                {expandedGuest === 'anna' && (
+                  <div class="p-3 space-y-2.5 border-t border-gray-100 divide-y divide-gray-100">
+                    <div class="flex items-center justify-between text-xs pt-1">
+                      <div class="flex items-center gap-2">
+                        <span class="text-base">🐟</span>
+                        <div class="text-gray-800 font-medium">Grilled Salmon with Herbs</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-900">$22</span>
+                        <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs pt-2">
+                      <div class="flex items-center gap-2">
+                        <span class="text-base">🍰</span>
+                        <div class="text-gray-800 font-medium">Berry Panna Cotta (Dessert)</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-900">$10</span>
+                        <button class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Гість 2: Oleg Kovalenko (Choosing) */}
+              <div class="border border-[#FEDF89] rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div
+                  onClick={() => setExpandedGuest(expandedGuest === 'oleg' ? null : 'oleg')}
+                  class="bg-[#FFFDF5] px-3.5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-[#FEF6EE]/50 transition"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center">
+                      OK
+                    </div>
+                    <span class="font-bold text-gray-900 text-xs">Oleg Kovalenko</span>
+                    <span class="bg-[#FFF6E5] text-[#B54708] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#FEDF89]">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#F79009]"></span>
+                      Choosing
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-gray-900">$14.00</span>
+                    <span class="text-xs text-gray-400">{expandedGuest === 'oleg' ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+
+                {expandedGuest === 'oleg' && (
+                  <div class="p-3 text-xs text-gray-600 border-t border-[#FEDF89]/50">
+                    <div class="flex items-center justify-between">
+                      <span>🍲 Tom Yum Soup</span>
+                      <span class="font-bold">$14</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Гість 3: Dmitry Tarasov (Not joined) */}
+              <div class="border border-gray-200 rounded-2xl p-3 bg-white flex items-center justify-between text-xs shadow-sm">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-gray-100 text-gray-600 font-bold text-[10px] flex items-center justify-center">
+                    DT
+                  </div>
+                  <span class="font-bold text-gray-700">Dmitry Tarasov</span>
+                  <span class="bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                    Not joined
+                  </span>
+                </div>
+                <button class="text-[11px] bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold px-2.5 py-1 rounded-lg border border-gray-200 transition">
+                  Resend SMS 💬
+                </button>
+              </div>
+            </div>
+
+            {/* 7. ДІЄТИЧНІ ПРИМІТКИ ДЛЯ КУХНІ */}
+            <div class="bg-[#FEF6EE] border border-[#F9DBAF] rounded-2xl p-3">
+              <div class="flex items-center gap-1 text-[11px] font-bold text-[#B54708] mb-2">
+                <span>⚠️</span>
+                <span>Table Dietary Notes for Kitchen:</span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold">
+                <span class="bg-white text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200 flex items-center gap-1">
+                  🌱 2 Vegetarian
+                </span>
+                <span class="bg-white text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200 flex items-center gap-1">
+                  🌱 1 Vegan
+                </span>
+                <span class="bg-[#FEE4E2] text-[#B42318] px-2 py-0.5 rounded-lg border border-[#FECDCA] flex items-center gap-1">
+                  🥜 Nut Allergy: Oleg K.
+                </span>
+              </div>
+            </div>
+
+            {/* 8. ЧАС ПОДАЧІ (SERVING TIME) */}
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                SERVING TIME
+              </label>
+              <select class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B] shadow-sm">
+                <option>Serve starters upon arrival (18:30)</option>
+                <option>Serve all dishes together</option>
+                <option>Serve drinks first, food 19:00</option>
+              </select>
+            </div>
+
+          </div>
+
+          {/* ПІДВАЛ (ИТОГ ТА КНОПКА ЗАМОВЛЕННЯ) */}
+          <div class="p-4 border-t border-gray-100 bg-white space-y-3 flex-shrink-0">
+            <div class="space-y-1 text-xs">
+              <div class="flex items-center justify-between text-gray-500">
+                <span>Walter's Order:</span>
+                <span class="font-medium text-gray-900">$27.00</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-500">
+                <span>Guests' Orders (5 items):</span>
+                <span class="font-medium text-gray-900">$74.00</span>
+              </div>
+              <div class="flex items-center justify-between pt-1 border-t border-gray-100">
+                <span class="font-extrabold text-sm text-gray-900">
+                  Grand Total <span class="text-xs font-normal text-gray-400">({paymentMode === 'host' ? 'Host covers all' : 'Each pays own'})</span>
+                </span>
+                <span class="text-2xl font-black text-[#18633B]">
+                  $101.00
+                </span>
+              </div>
+            </div>
+
+            {/* ВЕЛИКА ЗЕЛЕНА КНОПКА SUBMIT */}
+            <button
+              onClick={() => setIsLocked(true)}
+              class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
+                isLocked
+                  ? 'bg-gray-800 text-gray-300 cursor-not-allowed'
+                  : 'bg-[#18633B] hover:bg-[#13502f] active:scale-[0.99] text-white'
+              }`}
+            >
+              {isLocked ? '🔒 Order Locked & Sent to Kitchen' : 'Lock & Submit Pre-Order to Kitchen'}
+            </button>
+            <p class="text-[10px] text-center text-gray-400 leading-tight">
+              Free edits until 16:30. Selections lock automatically after cutoff.
+            </p>
+          </div>
+
+        </div>
+      );
+    }
+
+    // Монтуємо React в контейнер #root
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,3 +1,10 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+
 // База даних сесій учасників столу (у пам'яті для Lambda)
 let mockSessions = [
   {
@@ -79,7 +86,7 @@ export const handler = async (event) => {
   const path = event.rawPath || event.path || "/";
   const method = event.requestContext?.http?.method || event.httpMethod || "GET";
 
-  const headers = {
+  const jsonHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -88,10 +95,25 @@ export const handler = async (event) => {
 
   // Preflight CORS запит
   if (method === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
+    return { statusCode: 204, headers: jsonHeaders, body: "" };
   }
 
   try {
+    // ==========================================
+    // 🌐 ВІЗУАЛЬНИЙ ЗАСТОСУНОК (HTML + REACT + TAILWIND)
+    // Відкривається за головним посиланням!
+    // ==========================================
+    if (method === "GET" && (path === "/" || path === "/index.html" || path === "")) {
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: htmlContent
+      };
+    }
+
     // ==========================================
     // 🟢 1-Й РІВЕНЬ: Отримання списку сесій групи
     // GET /guest/groups/{groupReservationId}/sessions
@@ -100,7 +122,7 @@ export const handler = async (event) => {
       const snapshot = calculateGroupSnapshot(mockSessions.filter(s => s.type === "Guest"));
       return {
         statusCode: 200,
-        headers,
+        headers: jsonHeaders,
         body: JSON.stringify(snapshot)
       };
     }
@@ -112,7 +134,7 @@ export const handler = async (event) => {
     if (method === "GET" && path.includes("/guest-session-id")) {
       return {
         statusCode: 200,
-        headers,
+        headers: jsonHeaders,
         body: JSON.stringify({
           guestSessionId: "owner-session-123"
         })
@@ -133,7 +155,7 @@ export const handler = async (event) => {
       if (!body.reservationId && !path.includes("group")) {
         return {
           statusCode: 404,
-          headers,
+          headers: jsonHeaders,
           body: JSON.stringify({ error: "Reservation or group reservation not found" })
         };
       }
@@ -143,7 +165,7 @@ export const handler = async (event) => {
       if (submittedSessions.length === 0) {
         return {
           statusCode: 400,
-          headers,
+          headers: jsonHeaders,
           body: JSON.stringify({ error: "No submitted sessions found" })
         };
       }
@@ -153,7 +175,7 @@ export const handler = async (event) => {
       if (allItems.length === 0) {
         return {
           statusCode: 400,
-          headers,
+          headers: jsonHeaders,
           body: JSON.stringify({ error: "No dishes found in submitted sessions" })
         };
       }
@@ -173,7 +195,7 @@ export const handler = async (event) => {
 
       return {
         statusCode: 200,
-        headers,
+        headers: jsonHeaders,
         body: JSON.stringify(consolidatedDishes)
       };
     }
@@ -190,7 +212,7 @@ export const handler = async (event) => {
       if (!sessionExists) {
         return {
           statusCode: 404,
-          headers,
+          headers: jsonHeaders,
           body: JSON.stringify({ error: "Guest session not found" })
         };
       }
@@ -202,30 +224,21 @@ export const handler = async (event) => {
       const updatedSnapshot = calculateGroupSnapshot(mockSessions.filter(s => s.type === "Guest"));
       return {
         statusCode: 200,
-        headers,
+        headers: jsonHeaders,
         body: JSON.stringify(updatedSnapshot)
       };
     }
 
-    // Головна сторінка або документація API
+    // Маршрут не знайдено
     return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        status: "online",
-        project: "Restaurant Group Pre-Order API (Node.js)",
-        endpoints: [
-          "GET  /guest/groups/{id}/sessions (Level 1)",
-          "GET  /reservations/{id}/guest-session-id (Level 2)",
-          "POST /group-reservations/{id}/submit (Level 2)",
-          "DELETE /guest/groups/{id}/sessions/{sessionId} (Level 3)"
-        ]
-      })
+      statusCode: 404,
+      headers: jsonHeaders,
+      body: JSON.stringify({ error: "Маршрут не знайдено" })
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers,
+      headers: jsonHeaders,
       body: JSON.stringify({ error: err.message })
     };
   }
