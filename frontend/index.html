@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green &amp; Tasty - Restaurant &amp; Group Pre-Order</title>
+  <title>Green &amp; Tasty - Multi-Role Restaurant &amp; Pre-Order Platform</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -72,12 +72,14 @@
     }
 
     function App() {
-      // Navigation Tab: 'main' | 'book' | 'reservations' | 'group-order'
-      const [activePage, setActivePage] = useState('main');
+      // ----------------------------------------------------
+      // CURRENT ACTIVE ROLE SWITCHER FOR FULL TESTING
+      // Roles: 'host' (Owner) | 'guest' (Table Guest) | 'waiter' (Staff) | 'kitchen' (Chef)
+      // ----------------------------------------------------
+      const [currentRole, setCurrentRole] = useState('host');
 
-      // Selected Dish Modal on Main Page
-      const [selectedDishModal, setSelectedDishModal] = useState(null);
-      const [dishModalQty, setDishModalQty] = useState(1);
+      // Navigation Tab: 'main' | 'book' | 'reservations' | 'group-order' | 'guest-flow' | 'waiter-flow' | 'kitchen-flow'
+      const [activePage, setActivePage] = useState('main');
 
       // Toast Notification
       const [toast, setToast] = useState({ show: false, text: "" });
@@ -91,213 +93,31 @@
         ? window.location.href.split('?')[0]
         : "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/";
 
-      // Share drawer and interactive modal state
-      const [showShareBox, setShowShareBox] = useState(false);
-      const [shareModal, setShareModal] = useState({
-        isOpen: false,
-        channel: 'email', // 'email' | 'sms' | 'whatsapp' | 'remind'
-        recipient: '',
-        guestName: ''
-      });
-
-      const openShareModal = (channel, defaultRecipient = '', guestName = '') => {
-        setShareModal({
-          isOpen: true,
-          channel,
-          recipient: defaultRecipient,
-          guestName
-        });
-      };
-
       // ----------------------------------------------------
-      // AUTH / USER MODAL STATE (from Figma)
-      // ----------------------------------------------------
-      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-      const [authTab, setAuthTab] = useState('signin'); // 'signin' | 'signup' | 'reset'
-      const [authForm, setAuthForm] = useState({
-        name: 'Jasmine Smith',
-        email: 'jasmine.smith@example.com',
-        password: '',
-        confirmPassword: '',
-        resetCode: ['', '', '', '']
-      });
-
-      // ----------------------------------------------------
-      // RESERVATION & TABLE DETAILS STATE (Customizable by User)
+      // MASTER RESERVATION & TABLE DETAILS (Synced across all roles)
       // ----------------------------------------------------
       const [reservationDetails, setReservationDetails] = useState({
+        reservationId: "res-8492",
         tableName: "Table #4 (Indoor Lounge) • 6 Seats",
+        tableNumber: "4",
         occasion: "Birthday Celebration",
         location: "Main Dining Hall, 140 Rockwell Avenue",
+        date: "2026-10-31",
         startTime: "18:30",
         endTime: "21:30",
         guestCount: 5,
+        hostName: "Walter",
         servingSchedule: "Serve starters upon arrival (18:30), mains at 19:15",
         specialRequests: "Please arrange festive napkins. Oleg K. has a severe nut allergy."
       });
 
-      // Edit Modal State
-      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-      const [editForm, setEditForm] = useState({ ...reservationDetails });
-
-      const openEditModal = () => {
-        setEditForm({ ...reservationDetails });
-        setIsEditModalOpen(true);
-      };
-
-      // Payment Mode: 'host' (Host Covers All) | 'split_equal' (Split Bill Evenly) | 'split_custom' (Pay Per Individual Selection)
-      const [paymentMode, setPaymentMode] = useState('host');
-
-      // Dietary & Allergy notes per participant
-      const [guestDietaryNotes, setGuestDietaryNotes] = useState({
-        "owner-session-123": "Dressing on the side, no heavy garlic",
-        "session1": "Vegetarian only; Caesar salad without anchovies",
-        "session2": "Severe nut allergy (walnuts / peanuts)",
-        "session3": "No dietary restrictions"
-      });
-
-      const [editNoteModal, setEditNoteModal] = useState({
-        isOpen: false,
-        guestId: null,
-        guestName: "",
-        note: ""
-      });
-
-      const openEditNoteModal = (person) => {
-        setEditNoteModal({
-          isOpen: true,
-          guestId: person.id,
-          guestName: person.name,
-          note: guestDietaryNotes[person.id] || ""
-        });
-      };
-
-      // Toggle between Active Reservation and Figma Empty State on Reservations Page
-      const [reservationsView, setReservationsView] = useState('active'); // 'active' | 'empty'
+      // Status of group order: "Open" | "Sent to Restaurant" | "In Progress" | "Confirmed by Restaurant" | "Rejected"
+      const [groupStatus, setGroupStatus] = useState("Open");
 
       // ----------------------------------------------------
-      // DATA: POPULAR DISHES (from Figma)
-      // ----------------------------------------------------
-      const popularDishes = [
-        {
-          id: "dish1",
-          name: "Fresh Strawberry Mint Salad",
-          price: 17,
-          weight: "430g",
-          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
-          desc: "Fresh strawberries, organic mixed greens, creamy feta cheese, garden mint, and sweet poppy seed dressing.",
-          calories: "430 kcal",
-          protein: "12.00g",
-          fats: "14.00g",
-          carbs: "28.00g"
-        },
-        {
-          id: "dish2",
-          name: "Roasted Sweet Potato & Lentil",
-          price: 10,
-          weight: "380g",
-          image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
-          desc: "Warm roasted sweet potato chunks with black lentils, baby spinach, pomegranate seeds, and tahini drizzle.",
-          calories: "380 kcal",
-          protein: "14.50g",
-          fats: "8.00g",
-          carbs: "42.00g"
-        },
-        {
-          id: "dish3",
-          name: "Avocado Quinoa Bowl",
-          price: 18,
-          weight: "410g",
-          image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
-          desc: "Fluffy tri-color quinoa, ripe Hass avocado, cherry tomatoes, cucumbers, edamame, and herb citrus dressing.",
-          calories: "410 kcal",
-          protein: "11.00g",
-          fats: "19.00g",
-          carbs: "34.00g"
-        },
-        {
-          id: "dish4",
-          name: "Grilled Salmon with Herbs",
-          price: 22,
-          weight: "350g",
-          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80",
-          desc: "Wild Atlantic salmon fillet pan-seared with fresh rosemary, thyme, garlic butter, and grilled asparagus.",
-          calories: "520 kcal",
-          protein: "38.00g",
-          fats: "26.00g",
-          carbs: "4.00g"
-        }
-      ];
-
-      // ----------------------------------------------------
-      // DATA: LOCATIONS (from Figma)
-      // ----------------------------------------------------
-      const locations = [
-        {
-          id: "loc1",
-          name: "48 Rustaveli Avenue",
-          rating: "4.9",
-          reviewsCount: "128 reviews",
-          hours: "Daily 10:00 - 23:00",
-          image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-          id: "loc2",
-          name: "14 Baratashvili Street",
-          rating: "4.8",
-          reviewsCount: "94 reviews",
-          hours: "Daily 11:00 - 23:00",
-          image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-          id: "loc3",
-          name: "9 Abashidze Street",
-          rating: "4.9",
-          reviewsCount: "142 reviews",
-          hours: "Daily 10:00 - 00:00",
-          image: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=600&q=80"
-        }
-      ];
-
-      // ----------------------------------------------------
-      // DATA: CUSTOMER REVIEWS (from Figma)
-      // ----------------------------------------------------
-      const reviews = [
-        {
-          id: "r1",
-          author: "Elena Rostova",
-          rating: 5,
-          date: "Oct 24, 2026",
-          text: "Green & Tasty has become our family favorite! The Georgian salads are amazingly authentic yet light. The group pre-order feature made our birthday dinner totally seamless."
-        },
-        {
-          id: "r2",
-          author: "Alex Morgan",
-          rating: 5,
-          date: "Oct 20, 2026",
-          text: "Exceptional atmosphere on Rustaveli Ave. Ordered ahead with friends so all dishes arrived right as we sat down. Roasted Sweet Potato salad is unbelievable!"
-        },
-        {
-          id: "r3",
-          author: "David Chen",
-          rating: 5,
-          date: "Oct 15, 2026",
-          text: "Best dining experience in town. High quality ingredients, impeccable service, and the digital table reservation flow worked without a hitch."
-        }
-      ];
-
-      // ----------------------------------------------------
-      // GROUP PRE-ORDER STATE
+      // PARTICIPANTS STATE
       // ----------------------------------------------------
       const [ownerSessionId] = useState("owner-session-123");
-      const [groupStatus, setGroupStatus] = useState("Open");
-      const [lastSyncTime, setLastSyncTime] = useState(new Date());
-      const [syncError, setSyncError] = useState(null);
-      const [isSyncing, setIsSyncing] = useState(false);
-      const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-      const [removeGuestModal, setRemoveGuestModal] = useState({ isOpen: false, guest: null });
-      const [isSubmitting, setIsSubmitting] = useState(false);
-
       const [participants, setParticipants] = useState([
         {
           id: "owner-session-123",
@@ -341,9 +161,125 @@
 
       const consolidation = useMemo(() => consolidatePreOrder(participants), [participants]);
 
-      // Level 3 background sync
+      // Payment Mode: 'host' (Host Covers All) | 'split_equal' (Split Bill Evenly) | 'split_custom' (Pay Per Individual Selection)
+      const [paymentMode, setPaymentMode] = useState('host');
+
+      // Dietary & Allergy notes per participant
+      const [guestDietaryNotes, setGuestDietaryNotes] = useState({
+        "owner-session-123": "Dressing on the side, no heavy garlic",
+        "session1": "Vegetarian only; Caesar salad without anchovies",
+        "session2": "Severe nut allergy (walnuts / peanuts)",
+        "session3": "No dietary restrictions"
+      });
+
+      // ----------------------------------------------------
+      // GUEST ACTOR STATE (For Guest Pre-Order simulation)
+      // ----------------------------------------------------
+      const [activeGuestId, setActiveGuestId] = useState("session2"); // Defaults to Olena
+      const activeGuest = useMemo(() => {
+        return participants.find(p => p.id === activeGuestId) || participants[1];
+      }, [participants, activeGuestId]);
+
+      // ----------------------------------------------------
+      // BOOK A TABLE INTERACTIVE STATE
+      // ----------------------------------------------------
+      const [bookForm, setBookForm] = useState({
+        location: "48 Rustaveli Avenue (Main Dining Hall)",
+        date: "2026-10-31",
+        partySize: "5 Guests (Group Reservation)",
+        selectedTimeSlot: "18:30 - 21:30",
+        occasion: "Birthday Celebration",
+        specialRequests: "Birthday celebration for 5 guests with shared pre-order"
+      });
+
+      const [bookSuccessModal, setBookSuccessModal] = useState(false);
+
+      // Available Book Slots
+      const availableTimeSlots = [
+        "12:00 - 14:00",
+        "18:30 - 21:30",
+        "19:00 - 22:00",
+        "20:00 - 23:00"
+      ];
+
+      // ----------------------------------------------------
+      // MODALS: Submit, Remove Guest, Edit Reservation, Share
+      // ----------------------------------------------------
+      const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+      const [removeGuestModal, setRemoveGuestModal] = useState({ isOpen: false, guest: null });
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+      const [editForm, setEditForm] = useState({ ...reservationDetails });
+      const [showShareBox, setShowShareBox] = useState(false);
+
+      const [shareModal, setShareModal] = useState({
+        isOpen: false,
+        channel: 'email',
+        recipient: '',
+        guestName: ''
+      });
+
+      const openShareModal = (channel, defaultRecipient = '', guestName = '') => {
+        setShareModal({
+          isOpen: true,
+          channel,
+          recipient: defaultRecipient,
+          guestName
+        });
+      };
+
+      const [editNoteModal, setEditNoteModal] = useState({
+        isOpen: false,
+        guestId: null,
+        guestName: "",
+        note: ""
+      });
+
+      const openEditNoteModal = (person) => {
+        setEditNoteModal({
+          isOpen: true,
+          guestId: person.id,
+          guestName: person.name,
+          note: guestDietaryNotes[person.id] || ""
+        });
+      };
+
+      // 3-Hour Cancellation Modal
+      const [cancelDishModal, setCancelDishModal] = useState({
+        isOpen: false,
+        guestId: null,
+        guestName: ""
+      });
+
+      // Waiter Review Modal (Inspector)
+      const [waiterInspectModal, setWaiterInspectModal] = useState(false);
+
+      // Auth Modal
+      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+      const [authTab, setAuthTab] = useState('signin');
+      const [authForm, setAuthForm] = useState({
+        name: 'Jasmine Smith',
+        email: 'jasmine.smith@example.com',
+        password: '',
+        confirmPassword: ''
+      });
+
+      // Selected Dish Modal (Menu details)
+      const [selectedDishModal, setSelectedDishModal] = useState(null);
+      const [dishModalQty, setDishModalQty] = useState(1);
+
+      // Reservations View toggle (Active vs Figma Empty State)
+      const [reservationsView, setReservationsView] = useState('active');
+
+      // ----------------------------------------------------
+      // BACKGROUND SYNC (Level 3 - 15 Seconds)
+      // ----------------------------------------------------
+      const [lastSyncTime, setLastSyncTime] = useState(new Date());
+      const [syncError, setSyncError] = useState(null);
+      const [isSyncing, setIsSyncing] = useState(false);
+
       const syncData = async (silent = true) => {
-        if (groupStatus === "Submitted") return;
+        if (groupStatus === "Submitted" || groupStatus === "Confirmed by Restaurant") return;
         if (!silent) setIsSyncing(true);
         try {
           const res = await fetch(`${API_BASE}/guest/groups/group1/sessions`, {
@@ -369,26 +305,28 @@
       };
 
       useEffect(() => {
-        if (groupStatus === "Submitted") return;
+        if (groupStatus === "Submitted" || groupStatus === "Confirmed by Restaurant") return;
         const timer = setInterval(() => syncData(true), 15000);
         return () => clearInterval(timer);
       }, [groupStatus, lastSyncTime]);
 
+      // Confirm Submit Pre-Order
       const handleConfirmSubmit = async () => {
         setIsSubmitting(true);
         try {
           await fetch(`${API_BASE}/group-reservations/group1/submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Role': 'Owner' },
-            body: JSON.stringify({ reservationId: "reservation-123" })
+            body: JSON.stringify({ reservationId: reservationDetails.reservationId })
           });
         } catch {}
-        setGroupStatus("Submitted");
+        setGroupStatus("Sent to Restaurant");
         setIsSubmitModalOpen(false);
         setIsSubmitting(false);
-        showToast("Pre-order sent to the restaurant");
+        showToast("Pre-order sent to restaurant! Waiter notified for approval.");
       };
 
+      // Confirm Remove Guest
       const handleConfirmRemove = async () => {
         if (!removeGuestModal.guest) return;
         const guestId = removeGuestModal.guest.id;
@@ -404,6 +342,127 @@
         showToast(`${guestName} and their pre-order were removed`);
       };
 
+      // Cancel Pre-Order (3-Hour Policy Execution)
+      const handleCancelGuestPreOrder = (guestId) => {
+        setParticipants(prev => prev.map(p => {
+          if (p.id === guestId) {
+            return { ...p, items: [], total: 0, isSubmitted: false };
+          }
+          return p;
+        }));
+        setCancelDishModal({ isOpen: false, guestId: null, guestName: "" });
+        showToast("Pre-order cancelled within the 3-hour free cancellation window");
+      };
+
+      // ----------------------------------------------------
+      // DATA: POPULAR DISHES & MENU
+      // ----------------------------------------------------
+      const popularDishes = [
+        {
+          id: "dish1",
+          name: "Fresh Strawberry Mint Salad",
+          price: 17,
+          weight: "430g",
+          course: "Starters & Salads",
+          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+          desc: "Fresh strawberries, organic mixed greens, creamy feta cheese, garden mint, and sweet poppy seed dressing.",
+          calories: "430 kcal",
+          protein: "12.00g",
+          fats: "14.00g",
+          carbs: "28.00g"
+        },
+        {
+          id: "dish2",
+          name: "Roasted Sweet Potato & Lentil",
+          price: 10,
+          weight: "380g",
+          course: "Starters & Salads",
+          image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+          desc: "Warm roasted sweet potato chunks with black lentils, baby spinach, pomegranate seeds, and tahini drizzle.",
+          calories: "380 kcal",
+          protein: "14.50g",
+          fats: "8.00g",
+          carbs: "42.00g"
+        },
+        {
+          id: "dish3",
+          name: "Avocado Quinoa Bowl",
+          price: 18,
+          weight: "410g",
+          course: "Main Courses",
+          image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
+          desc: "Fluffy tri-color quinoa, ripe Hass avocado, cherry tomatoes, cucumbers, edamame, and herb citrus dressing.",
+          calories: "410 kcal",
+          protein: "11.00g",
+          fats: "19.00g",
+          carbs: "34.00g"
+        },
+        {
+          id: "dish4",
+          name: "Grilled Salmon with Herbs",
+          price: 22,
+          weight: "350g",
+          course: "Main Courses",
+          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80",
+          desc: "Wild Atlantic salmon fillet pan-seared with fresh rosemary, thyme, garlic butter, and grilled asparagus.",
+          calories: "520 kcal",
+          protein: "38.00g",
+          fats: "26.00g",
+          carbs: "4.00g"
+        }
+      ];
+
+      const locations = [
+        {
+          id: "loc1",
+          name: "48 Rustaveli Avenue",
+          rating: "4.9",
+          reviewsCount: "128 reviews",
+          hours: "Daily 10:00 - 23:00",
+          image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          id: "loc2",
+          name: "14 Baratashvili Street",
+          rating: "4.8",
+          reviewsCount: "94 reviews",
+          hours: "Daily 11:00 - 23:00",
+          image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          id: "loc3",
+          name: "9 Abashidze Street",
+          rating: "4.9",
+          reviewsCount: "142 reviews",
+          hours: "Daily 10:00 - 00:00",
+          image: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=600&q=80"
+        }
+      ];
+
+      const reviews = [
+        {
+          id: "r1",
+          author: "Elena Rostova",
+          rating: 5,
+          date: "Oct 24, 2026",
+          text: "Green & Tasty has become our family favorite! The Georgian salads are amazingly authentic yet light. The group pre-order feature made our birthday dinner totally seamless."
+        },
+        {
+          id: "r2",
+          author: "Alex Morgan",
+          rating: 5,
+          date: "Oct 20, 2026",
+          text: "Exceptional atmosphere on Rustaveli Ave. Ordered ahead with friends so all dishes arrived right as we sat down. Roasted Sweet Potato salad is unbelievable!"
+        },
+        {
+          id: "r3",
+          author: "David Chen",
+          rating: 5,
+          date: "Oct 15, 2026",
+          text: "Best dining experience in town. High quality ingredients, impeccable service, and the digital table reservation flow worked without a hitch."
+        }
+      ];
+
       return (
         <div class="flex-1 flex flex-col bg-[#FAF9F6]">
 
@@ -414,7 +473,47 @@
             </div>
           )}
 
-          {/* GLOBAL NAVBAR (Matching Figma - Clean, No Homework Badge) */}
+          {/* ========================================================= */}
+          {/* TOP ROLE SWITCHER BAR (Enables testing all 4 viewpoints)   */}
+          {/* ========================================================= */}
+          <div class="bg-gray-900 text-white text-xs px-4 md:px-8 py-2 flex flex-wrap items-center justify-between border-b border-gray-800">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Testing Role:</span>
+              <div class="flex items-center gap-1.5 bg-gray-800 p-1 rounded-xl">
+                <button
+                  onClick={() => { setCurrentRole('host'); setActivePage('group-order'); showToast("Switched to Host / Owner View"); }}
+                  class={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${currentRole === 'host' ? 'bg-[#18633B] text-white shadow-xs' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Host (Walter)
+                </button>
+                <button
+                  onClick={() => { setCurrentRole('guest'); setActivePage('guest-flow'); showToast("Switched to Guest View (via invite link)"); }}
+                  class={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${currentRole === 'guest' ? 'bg-[#18633B] text-white shadow-xs' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Guest (Olena)
+                </button>
+                <button
+                  onClick={() => { setCurrentRole('waiter'); setActivePage('waiter-flow'); showToast("Switched to Waiter View (Alex Caper)"); }}
+                  class={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${currentRole === 'waiter' ? 'bg-[#18633B] text-white shadow-xs' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Waiter (Alex Caper)
+                </button>
+                <button
+                  onClick={() => { setCurrentRole('kitchen'); setActivePage('kitchen-flow'); showToast("Switched to Kitchen Display (Chef)"); }}
+                  class={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${currentRole === 'kitchen' ? 'bg-[#18633B] text-white shadow-xs' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Kitchen (Chef)
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 text-[11px] text-gray-400">
+              <span>Status: <strong class="text-emerald-400">{groupStatus}</strong></span>
+              <span>Total: <strong class="text-white">${consolidation.grandTotal}.00</strong></span>
+            </div>
+          </div>
+
+          {/* GLOBAL NAVBAR */}
           <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xs">
             {/* Logo */}
             <div class="flex items-center gap-2.5 cursor-pointer" onClick={() => setActivePage('main')}>
@@ -425,7 +524,7 @@
             </div>
 
             {/* Navigation Links */}
-            <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
+            <div class="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-gray-600">
               <button
                 onClick={() => setActivePage('main')}
                 class={`transition pb-1 ${activePage === 'main' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
@@ -445,10 +544,28 @@
                 Reservations
               </button>
               <button
-                onClick={() => setActivePage('group-order')}
+                onClick={() => { setActivePage('group-order'); setCurrentRole('host'); }}
                 class={`transition pb-1 ${activePage === 'group-order' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
               >
                 Group Pre-Order
+              </button>
+              <button
+                onClick={() => { setActivePage('guest-flow'); setCurrentRole('guest'); }}
+                class={`transition pb-1 ${activePage === 'guest-flow' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Guest Pre-Order
+              </button>
+              <button
+                onClick={() => { setActivePage('waiter-flow'); setCurrentRole('waiter'); }}
+                class={`transition pb-1 ${activePage === 'waiter-flow' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Waiter View
+              </button>
+              <button
+                onClick={() => { setActivePage('kitchen-flow'); setCurrentRole('kitchen'); }}
+                class={`transition pb-1 ${activePage === 'kitchen-flow' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Kitchen
               </button>
             </div>
 
@@ -489,7 +606,6 @@
                   <button onClick={() => setIsAuthModalOpen(false)} class="text-gray-400 hover:text-gray-600 font-bold text-sm">X</button>
                 </div>
 
-                {/* Tab Switcher */}
                 <div class="flex border-b border-gray-200 text-xs font-bold">
                   <button
                     onClick={() => setAuthTab('signin')}
@@ -511,7 +627,6 @@
                   </button>
                 </div>
 
-                {/* SIGN IN VIEW */}
                 {authTab === 'signin' && (
                   <div class="space-y-3.5 text-xs">
                     <div>
@@ -549,7 +664,6 @@
                   </div>
                 )}
 
-                {/* CREATE ACCOUNT VIEW */}
                 {authTab === 'signup' && (
                   <div class="space-y-3.5 text-xs">
                     <div>
@@ -591,7 +705,6 @@
                   </div>
                 )}
 
-                {/* RESET PASSWORD VIEW */}
                 {authTab === 'reset' && (
                   <div class="space-y-3.5 text-xs">
                     <p class="text-gray-600 text-xs">
@@ -625,7 +738,7 @@
                     <button
                       onClick={() => {
                         setIsAuthModalOpen(false);
-                        showToast("Password reset link sent to your email");
+                        showToast("Password reset code verified");
                       }}
                       class="w-full mt-2 py-3 bg-[#18633B] hover:bg-[#124B2D] text-white font-bold rounded-xl shadow-sm text-xs transition"
                     >
@@ -638,7 +751,7 @@
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 1: MAIN LANDING PAGE (Exact Figma Design)           */}
+          {/* PAGE 1: MAIN LANDING PAGE                                 */}
           {/* ========================================================= */}
           {activePage === 'main' && (
             <div class="flex-1 space-y-12 pb-16">
@@ -662,7 +775,7 @@
                         Book a Table
                       </button>
                       <button
-                        onClick={() => setActivePage('group-order')}
+                        onClick={() => { setActivePage('group-order'); setCurrentRole('host'); }}
                         class="bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-bold text-xs md:text-sm px-6 py-3 rounded-2xl transition"
                       >
                         Group Pre-Order
@@ -784,7 +897,7 @@
           )}
 
           {/* ========================================================= */}
-          {/* DISH DETAIL MODAL (Matching Figma)                        */}
+          {/* DISH DETAIL MODAL                                         */}
           {/* ========================================================= */}
           {selectedDishModal && (
             <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -822,12 +935,32 @@
                     <button onClick={() => setSelectedDishModal(null)} class="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
                     <button
                       onClick={() => {
+                        // Add to current actor's cart
+                        const dish = selectedDishModal;
+                        const qty = dishModalQty;
+                        const targetId = currentRole === 'guest' ? activeGuestId : ownerSessionId;
+
+                        setParticipants(prev => prev.map(p => {
+                          if (p.id === targetId) {
+                            const currentItems = [...(p.items || [])];
+                            const existing = currentItems.find(it => (it.dish?.id || it.dishId) === dish.id);
+                            if (existing) {
+                              existing.quantity += qty;
+                            } else {
+                              currentItems.push({ dish, quantity: qty });
+                            }
+                            const newTotal = currentItems.reduce((acc, it) => acc + (it.dish.price * it.quantity), 0);
+                            return { ...p, items: currentItems, total: newTotal, isSubmitted: true };
+                          }
+                          return p;
+                        }));
+
                         setSelectedDishModal(null);
-                        showToast(`Added ${dishModalQty} x ${selectedDishModal.name} to pre-order selection`);
+                        showToast(`Added ${qty} x ${dish.name} to cart`);
                       }}
                       class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
                     >
-                      Confirm Selection
+                      Add to Selection
                     </button>
                   </div>
                 </div>
@@ -836,20 +969,24 @@
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 2: BOOK A TABLE PAGE                                 */}
+          {/* PAGE 2: BOOK A TABLE PAGE (Interactive Time Slot Select)  */}
           {/* ========================================================= */}
           {activePage === 'book' && (
             <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
               <div>
                 <h1 class="text-2xl md:text-3xl font-black text-gray-900">Book a Table</h1>
-                <p class="text-xs text-gray-500 mt-1">Select location, party size, and schedule a table reservation</p>
+                <p class="text-xs text-gray-500 mt-1">Select location, party size, and schedule an interactive table reservation</p>
               </div>
 
               <div class="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Location</label>
-                    <select class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]">
+                    <select
+                      value={bookForm.location}
+                      onChange={(e) => setBookForm({ ...bookForm, location: e.target.value })}
+                      class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]"
+                    >
                       <option>48 Rustaveli Avenue (Main Dining Hall)</option>
                       <option>14 Baratashvili Street (Terrace)</option>
                       <option>9 Abashidze Street (Lounge)</option>
@@ -858,52 +995,168 @@
 
                   <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Date</label>
-                    <input type="date" defaultValue="2026-10-31" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]" />
+                    <input
+                      type="date"
+                      value={bookForm.date}
+                      onChange={(e) => setBookForm({ ...bookForm, date: e.target.value })}
+                      class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]"
+                    />
                   </div>
 
                   <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Party Size</label>
-                    <select class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]">
+                    <select
+                      value={bookForm.partySize}
+                      onChange={(e) => setBookForm({ ...bookForm, partySize: e.target.value })}
+                      class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]"
+                    >
                       <option>5 Guests (Group Reservation)</option>
                       <option>2 Guests</option>
                       <option>4 Guests</option>
                       <option>8 Guests</option>
+                      <option>10 Guests</option>
                     </select>
                   </div>
                 </div>
 
+                {/* OCCASION INPUT */}
+                <div>
+                  <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Occasion / Celebration</label>
+                  <input
+                    type="text"
+                    value={bookForm.occasion}
+                    onChange={(e) => setBookForm({ ...bookForm, occasion: e.target.value })}
+                    placeholder="e.g. Birthday Celebration, Dinner with Friends, Anniversary"
+                    class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]"
+                  />
+                </div>
+
+                {/* INTERACTIVE TIME SLOTS */}
                 <div class="border-t border-gray-100 pt-4 space-y-3">
-                  <label class="block text-xs font-bold text-gray-700 uppercase">Available Time Slots</label>
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-gray-700 uppercase">Available Time Slots</label>
+                    <span class="text-xs text-[#18633B] font-bold">Selected: {bookForm.selectedTimeSlot}</span>
+                  </div>
+
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">12:00 - 14:00</button>
-                    <button class="p-3 rounded-xl border border-[#18633B] bg-[#ECFDF3] text-xs font-bold text-[#18633B]">18:30 - 21:30</button>
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">19:00 - 22:00</button>
-                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">20:00 - 23:00</button>
+                    {availableTimeSlots.map((slot) => {
+                      const isSelected = bookForm.selectedTimeSlot === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => {
+                            setBookForm({ ...bookForm, selectedTimeSlot: slot });
+                            showToast(`Time slot selected: ${slot}`);
+                          }}
+                          class={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                            isSelected
+                              ? 'border-[#18633B] bg-[#ECFDF3] text-[#18633B] ring-2 ring-[#18633B]/20'
+                              : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                          }`}
+                        >
+                          {isSelected && <span>✓</span>}
+                          <span>{slot}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <div class="pt-4 flex justify-end">
+                <div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
+                  <div class="text-xs text-gray-500">
+                    Free cancellation up to 3 hours before start time
+                  </div>
+
                   <button
                     onClick={() => {
-                      setActivePage('group-order');
-                      showToast("Table reserved. Proceeding to Group Pre-Order.");
+                      const times = bookForm.selectedTimeSlot.split(' - ');
+                      setReservationDetails(prev => ({
+                        ...prev,
+                        location: bookForm.location,
+                        date: bookForm.date,
+                        occasion: bookForm.occasion || "Dinner Reservation",
+                        startTime: times[0] || "18:30",
+                        endTime: times[1] || "21:30"
+                      }));
+                      setBookSuccessModal(true);
                     }}
-                    class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-sm transition"
+                    class="w-full sm:w-auto bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-sm transition"
                   >
-                    Confirm &amp; Manage Group Pre-Order &rarr;
+                    Confirm &amp; Generate Table Link &rarr;
                   </button>
                 </div>
               </div>
+
+              {/* BOOK SUCCESS MODAL */}
+              {bookSuccessModal && (
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                  <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl space-y-4 border border-gray-100">
+                    <div class="w-12 h-12 rounded-full bg-[#ECFDF3] text-[#027A48] flex items-center justify-center text-xl font-bold mx-auto border border-[#D1FADF]">
+                      ✓
+                    </div>
+                    <div class="text-center space-y-1">
+                      <h3 class="font-black text-lg text-gray-900">Table Booked Successfully!</h3>
+                      <p class="text-xs text-gray-500">
+                        {bookForm.location} &bull; {bookForm.selectedTimeSlot}
+                      </p>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 text-xs space-y-2">
+                      <span class="block text-[11px] font-bold text-gray-700">Shareable Table Pre-Order Link:</span>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={shareUrl}
+                          class="w-full bg-white border border-gray-300 rounded-xl px-2.5 py-1.5 text-[11px] font-mono text-gray-700"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard?.writeText(shareUrl);
+                            showToast("Table link copied to clipboard");
+                          }}
+                          class="bg-[#18633B] text-white px-3 py-1.5 rounded-xl text-xs font-bold"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="pt-2 flex flex-col gap-2">
+                      <button
+                        onClick={() => {
+                          setBookSuccessModal(false);
+                          setActivePage('group-order');
+                          setCurrentRole('host');
+                          showToast("Welcome to your Table Pre-Order review");
+                        }}
+                        class="w-full py-3 bg-[#18633B] hover:bg-[#124B2D] text-white font-bold rounded-xl text-xs transition shadow-sm"
+                      >
+                        Open Group Pre-Order &rarr;
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBookSuccessModal(false);
+                          setActivePage('reservations');
+                        }}
+                        class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+                      >
+                        View in Reservations List
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 3: RESERVATIONS LIST PAGE (Matching Figma)           */}
+          {/* PAGE 3: RESERVATIONS LIST PAGE                            */}
           {/* ========================================================= */}
           {activePage === 'reservations' && (
             <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
-
-              {/* Greeting & Support Contact Banner (From Figma) */}
               <div class="bg-[#EBF7EE] border border-[#D4EED8] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div>
                   <h2 class="font-extrabold text-sm text-gray-900">Hello, Jasmine Smith</h2>
@@ -915,7 +1168,6 @@
                 </div>
               </div>
 
-              {/* View Switcher: Active Bookings vs Empty State Preview */}
               <div class="flex items-center justify-between">
                 <div>
                   <h1 class="text-2xl font-black text-gray-900 tracking-tight">Your Reservations</h1>
@@ -931,14 +1183,13 @@
                 </div>
               </div>
 
-              {/* ACTIVE RESERVATIONS VIEW */}
               {reservationsView === 'active' && (
                 <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
                   <div class="space-y-2 flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-black text-base text-gray-900">{reservationDetails.tableName}</span>
                       <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
-                        {groupStatus === "Open" ? "Pre-Order In Progress" : "Confirmed by Restaurant"}
+                        {groupStatus}
                       </span>
                       <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
                         {reservationDetails.occasion}
@@ -955,15 +1206,15 @@
 
                   <div class="flex sm:flex-col gap-2 w-full sm:w-auto">
                     <button
-                      onClick={() => setActivePage('group-order')}
+                      onClick={() => { setActivePage('group-order'); setCurrentRole('host'); }}
                       class="flex-1 sm:flex-initial bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition text-center"
                     >
                       Group Pre-Order &rarr;
                     </button>
                     <button
                       onClick={() => {
-                        setActivePage('group-order');
-                        openEditModal();
+                        setEditForm({ ...reservationDetails });
+                        setIsEditModalOpen(true);
                       }}
                       class="flex-1 sm:flex-initial bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold text-xs px-4 py-2 rounded-xl transition text-center"
                     >
@@ -973,7 +1224,6 @@
                 </div>
               )}
 
-              {/* FIGMA EMPTY STATE VIEW */}
               {reservationsView === 'empty' && (
                 <div class="bg-white rounded-3xl p-10 md:p-14 border border-gray-200 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
                   <div class="w-20 h-20 rounded-full bg-[#EBF7EE] text-[#18633B] flex items-center justify-center font-bold text-2xl border border-[#D4EED8]">
@@ -998,7 +1248,7 @@
           )}
 
           {/* ========================================================= */}
-          {/* PAGE 4: GROUP PRE-ORDER (Interactive Host Screen)         */}
+          {/* PAGE 4: HOST / OWNER GROUP PRE-ORDER SCREEN               */}
           {/* ========================================================= */}
           {activePage === 'group-order' && (
             <div class="flex-1 flex justify-center py-4 md:py-8 px-0 md:px-4">
@@ -1051,7 +1301,6 @@
                       </div>
 
                       <div class="space-y-3.5 text-xs">
-                        {/* Occasion / Celebration */}
                         <div>
                           <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Occasion / Celebration:</label>
                           <input
@@ -1063,7 +1312,6 @@
                           />
                         </div>
 
-                        {/* Table Selection */}
                         <div>
                           <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Assigned Table:</label>
                           <select
@@ -1078,7 +1326,6 @@
                           </select>
                         </div>
 
-                        {/* Time Slot */}
                         <div class="grid grid-cols-2 gap-3">
                           <div>
                             <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Start Time:</label>
@@ -1110,7 +1357,6 @@
                           </div>
                         </div>
 
-                        {/* Serving Schedule / When to serve dishes */}
                         <div>
                           <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">When to Serve Dishes (Kitchen Schedule):</label>
                           <select
@@ -1125,7 +1371,6 @@
                           </select>
                         </div>
 
-                        {/* Special Requests */}
                         <div>
                           <label class="block font-bold text-gray-700 mb-1 uppercase text-[11px]">Kitchen Comments &amp; Allergy Details:</label>
                           <textarea
@@ -1198,7 +1443,7 @@
                   </div>
                 )}
 
-                {/* Share / Invite Modal (SMS, WhatsApp, Email, Remind) */}
+                {/* Share / Invite Modal */}
                 {shareModal.isOpen && (
                   <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
                     <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
@@ -1212,7 +1457,6 @@
                         <button onClick={() => setShareModal({ ...shareModal, isOpen: false })} class="text-gray-400 hover:text-gray-600 font-bold text-xs">X</button>
                       </div>
 
-                      {/* Email Form */}
                       {shareModal.channel === 'email' && (
                         <div class="space-y-3">
                           <div>
@@ -1251,7 +1495,6 @@
                         </div>
                       )}
 
-                      {/* SMS Form */}
                       {shareModal.channel === 'sms' && (
                         <div class="space-y-3">
                           <div>
@@ -1288,7 +1531,6 @@
                         </div>
                       )}
 
-                      {/* WhatsApp Form */}
                       {shareModal.channel === 'whatsapp' && (
                         <div class="space-y-3">
                           <p class="text-xs text-gray-600">
@@ -1315,7 +1557,6 @@
                         </div>
                       )}
 
-                      {/* Remind Form */}
                       {shareModal.channel === 'remind' && (
                         <div class="space-y-3">
                           <p class="text-xs text-gray-600">
@@ -1386,7 +1627,7 @@
                     </div>
                   </div>
 
-                  {/* TABLE & EVENT BANNER WITH EDIT BUTTON */}
+                  {/* TABLE & EVENT BANNER */}
                   <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-xs text-gray-600 space-y-2.5">
                     <div class="flex items-start justify-between gap-3">
                       <div>
@@ -1399,7 +1640,10 @@
                         <div class="text-[11px] text-gray-500 mt-0.5">{reservationDetails.location}</div>
                       </div>
                       <button
-                        onClick={openEditModal}
+                        onClick={() => {
+                          setEditForm({ ...reservationDetails });
+                          setIsEditModalOpen(true);
+                        }}
                         class="bg-white hover:bg-gray-100 text-[#18633B] border border-[#18633B]/40 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition flex-shrink-0"
                       >
                         Edit Details &amp; Time
@@ -1423,7 +1667,10 @@
                         <span class="font-semibold text-gray-900">{reservationDetails.servingSchedule}</span>
                       </div>
                       <button
-                        onClick={openEditModal}
+                        onClick={() => {
+                          setEditForm({ ...reservationDetails });
+                          setIsEditModalOpen(true);
+                        }}
                         class="text-[#18633B] hover:underline font-bold text-[11px]"
                       >
                         Change
@@ -1519,7 +1766,7 @@
                     </div>
                   )}
 
-                  {/* PAYMENT MODE SELECTOR (Split Bill vs Host Covers All) */}
+                  {/* PAYMENT MODE SELECTOR */}
                   <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-3">
                     <div class="flex items-center justify-between">
                       <div>
@@ -1532,7 +1779,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {/* Host Covers All */}
                       <div
                         onClick={() => { setPaymentMode('host'); showToast("Payment set: Host covers entire bill"); }}
                         class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
@@ -1553,7 +1799,6 @@
                         <div class="mt-2 text-[11px] font-bold text-[#18633B]">$540.00 single bill</div>
                       </div>
 
-                      {/* Split Bill Evenly */}
                       <div
                         onClick={() => { setPaymentMode('split_equal'); showToast("Payment set: Split evenly among guests"); }}
                         class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
@@ -1574,7 +1819,6 @@
                         <div class="mt-2 text-[11px] font-bold text-[#18633B]">${(consolidation.grandTotal / 5).toFixed(2)} / guest</div>
                       </div>
 
-                      {/* Pay Per Individual Selection */}
                       <div
                         onClick={() => { setPaymentMode('split_custom'); showToast("Payment set: Pay per individual dishes"); }}
                         class={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
@@ -1595,21 +1839,9 @@
                         <div class="mt-2 text-[11px] font-bold text-[#18633B]">Individual tabs</div>
                       </div>
                     </div>
-
-                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600">
-                      {paymentMode === 'host' && (
-                        <span>A single consolidated bill for <strong>${consolidation.grandTotal}.00</strong> will be presented to Walter upon arrival.</span>
-                      )}
-                      {paymentMode === 'split_equal' && (
-                        <span>Total <strong>${consolidation.grandTotal}.00</strong> divided equally: <strong>${(consolidation.grandTotal / 5).toFixed(2)}</strong> charged per each of the 5 guests.</span>
-                      )}
-                      {paymentMode === 'split_custom' && (
-                        <span>Separate bills: Walter ($180.00), Andrii ($360.00), Olena ($0.00 pending), Alex ($0.00 pending).</span>
-                      )}
-                    </div>
                   </div>
 
-                  {/* KITCHEN PACING & SERVING TIME DROPDOWN */}
+                  {/* KITCHEN PACING */}
                   <div class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-2.5">
                     <div class="flex items-center justify-between">
                       <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider">
@@ -1640,7 +1872,10 @@
                         <p class="text-[11px] text-gray-500">Flags passed directly to the restaurant head chef</p>
                       </div>
                       <button
-                        onClick={openEditModal}
+                        onClick={() => {
+                          setEditForm({ ...reservationDetails });
+                          setIsEditModalOpen(true);
+                        }}
                         class="text-xs font-bold text-[#18633B] hover:underline"
                       >
                         Edit Instructions
@@ -1739,7 +1974,7 @@
                                 )}
                               </div>
 
-                              {/* Dietary note & edit button for each participant */}
+                              {/* Dietary note & edit button */}
                               <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
                                 <div class="flex items-center gap-1.5 text-gray-600">
                                   <span class="font-bold text-gray-700">Dietary Note:</span>
@@ -1808,20 +2043,534 @@
 
                   <button
                     onClick={() => setIsSubmitModalOpen(true)}
-                    disabled={consolidation.dishes.length === 0 || groupStatus === "Submitted"}
+                    disabled={consolidation.dishes.length === 0 || groupStatus === "Sent to Restaurant" || groupStatus === "Confirmed by Restaurant"}
                     class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm transition shadow-sm ${
-                      groupStatus === "Submitted"
+                      groupStatus === "Sent to Restaurant" || groupStatus === "Confirmed by Restaurant"
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                         : consolidation.dishes.length === 0
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-[#18633B] hover:bg-[#124B2D] text-white active:scale-[0.99]'
                     }`}
                   >
-                    {groupStatus === "Submitted" ? "Pre-Order Sent to Restaurant" : "Submit Pre-Order"}
+                    {groupStatus === "Sent to Restaurant" || groupStatus === "Confirmed by Restaurant"
+                      ? "Pre-Order Sent to Restaurant"
+                      : "Submit Pre-Order"}
                   </button>
                 </footer>
 
               </main>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* PAGE 5: GUEST PRE-ORDER & DIGITAL RECEIPT (ЧЕК)           */}
+          {/* ========================================================= */}
+          {activePage === 'guest-flow' && (
+            <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
+              
+              {/* Table Invitation Header */}
+              <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+                  <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#18633B] bg-[#ECFDF3] px-2.5 py-0.5 rounded-full border border-[#D1FADF]">
+                      Guest Table Pre-Order
+                    </span>
+                    <h1 class="text-2xl font-black text-gray-900 mt-1">{reservationDetails.tableName}</h1>
+                    <p class="text-xs text-gray-500">
+                      Host: <strong>{reservationDetails.hostName}</strong> &bull; Occasion: <strong>{reservationDetails.occasion}</strong> &bull; {reservationDetails.location}
+                    </p>
+                  </div>
+
+                  {/* Switch Guest Actor */}
+                  <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-gray-600">Acting as:</label>
+                    <select
+                      value={activeGuestId}
+                      onChange={(e) => { setActiveGuestId(e.target.value); showToast(`Switched active guest`); }}
+                      class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-800 outline-none focus:border-[#18633B]"
+                    >
+                      {participants.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.isSubmitted ? 'Submitted' : 'Choosing'})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 3-HOUR CANCELLATION BANNER */}
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 flex items-start gap-3">
+                  <div class="w-6 h-6 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
+                    !
+                  </div>
+                  <div class="space-y-1">
+                    <div class="font-bold text-sm">3-Hour Free Cancellation &amp; Modification Policy</div>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">
+                      You can modify or cancel your pre-ordered dishes up to <strong>3 hours before arrival</strong> (cutoff: 15:30 today for an 18:30 table). After 15:30, the kitchen begins fresh ingredient preparation and dish selections are finalized.
+                    </p>
+                    <span class="inline-block bg-white text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold mt-1">
+                      Status: Within cancellation window (Free cancellation active)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* GUEST'S DIGITAL RECEIPT / PRE-ORDER SLIP (ЧЕК) */}
+              <div class="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#ECFDF3] text-[#027A48] flex items-center justify-center font-black text-base border border-[#D1FADF]">
+                      ✓
+                    </div>
+                    <div>
+                      <h2 class="font-extrabold text-base text-gray-900">Digital Pre-Order Receipt (Чек)</h2>
+                      <p class="text-xs text-gray-500">Guest: {activeGuest.name} &bull; Table #{reservationDetails.tableNumber}</p>
+                    </div>
+                  </div>
+
+                  <span class={`text-xs font-bold px-3 py-1 rounded-full border ${
+                    activeGuest.isSubmitted ? 'bg-[#ECFDF3] text-[#027A48] border-[#D1FADF]' : 'bg-[#FFF6E5] text-[#B54708] border-[#FEDF89]'
+                  }`}>
+                    {activeGuest.isSubmitted ? "Pre-order Confirmed" : "Cart In Progress"}
+                  </span>
+                </div>
+
+                {/* Items in Receipt */}
+                <div class="space-y-3">
+                  <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Your Selected Dishes:</div>
+                  {activeGuest.items && activeGuest.items.length > 0 ? (
+                    <div class="divide-y divide-gray-100">
+                      {activeGuest.items.map((item, idx) => (
+                        <div key={idx} class="py-3 flex items-center justify-between text-xs">
+                          <div>
+                            <div class="font-bold text-gray-900 text-sm">{item.dish.name}</div>
+                            <div class="text-gray-400 text-[11px]">Quantity: {item.quantity} x ${item.dish.price}.00</div>
+                          </div>
+                          <span class="font-bold text-gray-900 text-sm">${item.dish.price * item.quantity}.00</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div class="p-6 text-center text-xs text-gray-400 italic bg-gray-50 rounded-2xl">
+                      No dishes selected yet. Browse the menu below to add dishes to your pre-order.
+                    </div>
+                  )}
+
+                  {/* Dietary Note for this Guest */}
+                  <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 text-xs space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-gray-700">Your Dietary &amp; Allergy Instruction:</span>
+                      <button
+                        onClick={() => openEditNoteModal(activeGuest)}
+                        class="text-xs font-bold text-[#18633B] hover:underline"
+                      >
+                        Edit Note
+                      </button>
+                    </div>
+                    <p class="italic text-gray-600 text-[11px]">
+                      {guestDietaryNotes[activeGuest.id] || "No dietary restrictions specified."}
+                    </p>
+                  </div>
+
+                  {/* Receipt Subtotal */}
+                  <div class="pt-4 border-t border-gray-200 flex items-center justify-between">
+                    <div>
+                      <span class="text-xs text-gray-500 block">Total for Your Order:</span>
+                      <span class="text-[11px] text-gray-400">
+                        {paymentMode === 'host' ? 'Covered by Host (Walter)' : 'Due at table'}
+                      </span>
+                    </div>
+                    <div class="text-2xl font-black text-[#18633B]">${activeGuest.total}.00</div>
+                  </div>
+                </div>
+
+                {/* GUEST ACTIONS & 3-HOUR CANCELLATION BUTTON */}
+                <div class="pt-2 flex flex-wrap items-center justify-end gap-3 border-t border-gray-100">
+                  {activeGuest.items && activeGuest.items.length > 0 && (
+                    <button
+                      onClick={() => setCancelDishModal({ isOpen: true, guestId: activeGuest.id, guestName: activeGuest.name })}
+                      class="px-4 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition"
+                    >
+                      Cancel Pre-Order (3-Hour Policy)
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setParticipants(prev => prev.map(p => {
+                        if (p.id === activeGuest.id) {
+                          return { ...p, isSubmitted: true };
+                        }
+                        return p;
+                      }));
+                      showToast(`Pre-order confirmed for ${activeGuest.name}`);
+                    }}
+                    class="px-6 py-2.5 rounded-xl bg-[#18633B] hover:bg-[#124B2D] text-white text-xs font-bold transition shadow-sm"
+                  >
+                    Confirm My Dishes
+                  </button>
+                </div>
+              </div>
+
+              {/* QUICK MENU PICKER FOR GUEST */}
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-extrabold text-lg text-gray-900">Add More Dishes to Your Pre-Order</h3>
+                  <span class="text-xs text-gray-400">Click to view &amp; add</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {popularDishes.map((dish) => (
+                    <div
+                      key={dish.id}
+                      onClick={() => { setSelectedDishModal(dish); setDishModalQty(1); }}
+                      class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs hover:shadow-md transition cursor-pointer flex flex-col justify-between"
+                    >
+                      <div class="space-y-2">
+                        <img src={dish.image} alt={dish.name} class="w-full h-32 rounded-xl object-cover" />
+                        <h4 class="font-bold text-xs text-gray-900 leading-tight">{dish.name}</h4>
+                        <p class="text-[10px] text-gray-400">{dish.weight} &bull; {dish.calories}</p>
+                      </div>
+                      <div class="flex items-center justify-between pt-2 mt-2 border-t border-gray-100">
+                        <span class="font-black text-sm text-gray-900">${dish.price}.00</span>
+                        <span class="text-[11px] font-bold text-[#18633B] bg-[#ECFDF3] px-2.5 py-0.5 rounded-lg border border-[#D1FADF]">
+                          + Add
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CANCEL PRE-ORDER MODAL */}
+              {cancelDishModal.isOpen && (
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                  <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                    <h3 class="font-extrabold text-base text-gray-900">Cancel Pre-Order</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                      You are within the <strong>3-hour free cancellation window</strong> (table starts at {reservationDetails.startTime}). Are you sure you want to cancel your pre-order dishes? This will update the table total immediately.
+                    </p>
+                    <div class="pt-2 flex justify-end gap-2.5">
+                      <button
+                        onClick={() => setCancelDishModal({ isOpen: false, guestId: null, guestName: "" })}
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl"
+                      >
+                        Keep Order
+                      </button>
+                      <button
+                        onClick={() => handleCancelGuestPreOrder(cancelDishModal.guestId)}
+                        class="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm"
+                      >
+                        Cancel Dishes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* PAGE 6: WAITER DASHBOARD (Alex Caper - From Figma Image 2)*/}
+          {/* ========================================================= */}
+          {activePage === 'waiter-flow' && (
+            <div class="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
+              
+              {/* WAITER HEADER (Exact Figma Design) */}
+              <div class="bg-gradient-to-r from-[#18633B] to-[#2E8540] text-white rounded-3xl p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-wider text-emerald-200">Staff Portal &bull; Dining Hall Operations</span>
+                  <h1 class="text-2xl font-black tracking-tight mt-0.5">Hello, Alex Caper (Waiter)</h1>
+                  <p class="text-xs text-emerald-100 mt-1">48 Rustaveli Avenue &bull; Shift: 10:00 - 23:00 &bull; Active Tables</p>
+                </div>
+
+                <div class="flex gap-2">
+                  <button
+                    onClick={() => showToast("Staff report generated and downloaded")}
+                    class="bg-white/20 hover:bg-white/30 text-white border border-white/30 px-4 py-2 rounded-xl text-xs font-bold transition"
+                  >
+                    Download Report
+                  </button>
+                </div>
+              </div>
+
+              {/* RESERVATIONS WAITER VIEW GRID */}
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-extrabold text-lg text-gray-900">Reservations &bull; Waiter Management View</h2>
+                  <span class="text-xs text-gray-500">3 tables active</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  
+                  {/* CARD 1: TABLE #4 (Our Live Order) */}
+                  <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-xs flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-gray-900">Location 1 &bull; Table #4</span>
+                        <span class={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          groupStatus === 'Confirmed by Restaurant'
+                            ? 'bg-[#ECFDF3] text-[#027A48] border-[#D1FADF]'
+                            : groupStatus === 'Sent to Restaurant'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {groupStatus}
+                        </span>
+                      </div>
+
+                      <div class="text-xs text-gray-600 space-y-1">
+                        <p><strong>Date:</strong> Oct 31, 2026</p>
+                        <p><strong>Time:</strong> {reservationDetails.startTime} - {reservationDetails.endTime}</p>
+                        <p><strong>Pre-order:</strong> {consolidation.dishes.length} dishes (${consolidation.grandTotal}.00)</p>
+                        <p><strong>Customer:</strong> {reservationDetails.hostName} ({reservationDetails.occasion})</p>
+                        <p><strong>Party Size:</strong> {reservationDetails.guestCount} Guests</p>
+                      </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-gray-100">
+                      <div class="flex gap-2">
+                        <button
+                          onClick={() => setWaiterInspectModal(true)}
+                          class="flex-1 bg-[#18633B] hover:bg-[#124B2D] text-white text-xs font-bold py-2 rounded-xl transition text-center shadow-xs"
+                        >
+                          Review Pre-Order
+                        </button>
+                      </div>
+                      <div class="flex gap-2">
+                        {groupStatus !== 'Confirmed by Restaurant' ? (
+                          <button
+                            onClick={() => {
+                              setGroupStatus('Confirmed by Restaurant');
+                              showToast("Pre-order confirmed! Notification sent to host & guests");
+                            }}
+                            class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-[#027A48] border border-[#A6F4C5] text-xs font-bold py-1.5 rounded-xl transition"
+                          >
+                            Accept Order
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => showToast("Feedback updated for Table #4")}
+                            class="flex-1 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold py-1.5 rounded-xl"
+                          >
+                            Update Feedback
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setGroupStatus('Rejected');
+                            showToast("Order rejected by staff");
+                          }}
+                          class="px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold py-1.5 rounded-xl transition"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 2: TABLE #2 (Terrace) */}
+                  <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-xs flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-gray-900">Location 1 &bull; Table #2</span>
+                        <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                          No Pre-order
+                        </span>
+                      </div>
+
+                      <div class="text-xs text-gray-600 space-y-1">
+                        <p><strong>Date:</strong> Oct 31, 2026</p>
+                        <p><strong>Time:</strong> 19:00 - 22:00</p>
+                        <p><strong>Pre-order:</strong> 0 dishes</p>
+                        <p><strong>Customer:</strong> Michael Scott</p>
+                        <p><strong>Party Size:</strong> 4 Guests</p>
+                      </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t border-gray-100">
+                      <button onClick={() => showToast("Table reservation cancelled")} class="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold py-2 rounded-xl transition">
+                        Cancel Table
+                      </button>
+                      <button onClick={() => showToast("Edit table opened")} class="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold py-2 rounded-xl transition">
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CARD 3: TABLE #7 (VIP Hall) */}
+                  <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-xs flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-gray-900">Location 1 &bull; Table #7</span>
+                        <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                          Confirmed by Restaurant
+                        </span>
+                      </div>
+
+                      <div class="text-xs text-gray-600 space-y-1">
+                        <p><strong>Date:</strong> Oct 31, 2026</p>
+                        <p><strong>Time:</strong> 20:00 - 23:00</p>
+                        <p><strong>Pre-order:</strong> 4 dishes ($340.00)</p>
+                        <p><strong>Customer:</strong> Elena Rostova</p>
+                        <p><strong>Party Size:</strong> 8 Guests</p>
+                      </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t border-gray-100">
+                      <button onClick={() => showToast("Feedback updated")} class="w-full bg-[#18633B] hover:bg-[#124B2D] text-white text-xs font-bold py-2 rounded-xl transition">
+                        View / Update Feedback
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* WAITER PRE-ORDER INSPECT MODAL */}
+              {waiterInspectModal && (
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                  <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto custom-scroll">
+                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                      <div>
+                        <h3 class="font-extrabold text-base text-gray-900">Pre-Order Review &bull; Table #4</h3>
+                        <p class="text-xs text-gray-500">Customer: {reservationDetails.hostName} &bull; Total: ${consolidation.grandTotal}.00</p>
+                      </div>
+                      <button onClick={() => setWaiterInspectModal(false)} class="text-gray-400 hover:text-gray-600 font-bold text-sm">X</button>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                      <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900">
+                        <span class="font-bold block text-[11px] uppercase">Kitchen Pacing Schedule:</span>
+                        {reservationDetails.servingSchedule}
+                      </div>
+
+                      <div class="space-y-1.5">
+                        <span class="font-bold uppercase text-gray-400 text-[10px]">Consolidated Dish Items:</span>
+                        <div class="divide-y divide-gray-100 bg-gray-50 rounded-2xl p-3 border border-gray-200">
+                          {consolidation.dishes.map(dish => (
+                            <div key={dish.dishId} class="py-1.5 flex items-center justify-between">
+                              <span class="font-bold text-gray-900">{dish.name} x {dish.quantity}</span>
+                              <span class="font-bold text-gray-800">${dish.total}.00</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div class="space-y-1">
+                        <span class="font-bold uppercase text-gray-400 text-[10px]">Allergy &amp; Dietary Notes:</span>
+                        <div class="bg-red-50 p-3 rounded-xl border border-red-200 text-red-800 text-[11px] space-y-1">
+                          <p><strong>Table Flag:</strong> {reservationDetails.specialRequests}</p>
+                          <p><strong>Oleg K.:</strong> Severe Nut Allergy &bull; Caesar salad without nuts</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-100 flex justify-end gap-2.5">
+                      <button
+                        onClick={() => setWaiterInspectModal(false)}
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => {
+                          setGroupStatus('Confirmed by Restaurant');
+                          setWaiterInspectModal(false);
+                          showToast("Pre-order approved & confirmed for Table #4");
+                        }}
+                        class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                      >
+                        Approve Pre-Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* PAGE 7: KITCHEN DISPLAY SYSTEM (Chef & Kitchen Pacing)    */}
+          {/* ========================================================= */}
+          {activePage === 'kitchen-flow' && (
+            <div class="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
+              <div class="bg-gray-900 text-white rounded-3xl p-6 shadow-md flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Kitchen Display System (KDS)</span>
+                  <h1 class="text-2xl font-black tracking-tight mt-0.5">Head Chef Station</h1>
+                  <p class="text-xs text-gray-400 mt-1">Live order pacing and allergy safeguards</p>
+                </div>
+                <div class="bg-gray-800 px-4 py-2 rounded-2xl border border-gray-700 text-xs font-mono text-emerald-400">
+                  SYSTEM READY &bull; {new Date().toLocaleTimeString()}
+                </div>
+              </div>
+
+              {/* TICKET: TABLE #4 */}
+              <div class="bg-white rounded-3xl p-6 border-2 border-[#18633B] shadow-md space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <div class="flex items-center gap-3">
+                    <span class="bg-[#18633B] text-white font-black text-sm px-3 py-1 rounded-xl">Table #4</span>
+                    <span class="font-bold text-gray-900 text-sm">Target Serving Time: {reservationDetails.startTime}</span>
+                  </div>
+                  <span class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Pacing: Progressive
+                  </span>
+                </div>
+
+                {/* CRITICAL ALLERGY ALERT */}
+                <div class="bg-red-50 border-2 border-red-300 rounded-2xl p-4 text-red-900 text-xs space-y-1">
+                  <div class="font-black text-sm flex items-center gap-1.5 text-red-700">
+                    <span>⚠</span> CRITICAL ALLERGY ALERT
+                  </div>
+                  <p class="font-bold">Oleg K. &bull; Severe Nut Allergy</p>
+                  <p class="text-[11px] text-red-800">Ensure strict sanitization. No walnuts, pecans, or peanut cross-contamination in salad bowls.</p>
+                </div>
+
+                {/* COURSE BREAKDOWN */}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold uppercase text-gray-700 text-[11px]">Course 1: Starters (18:30)</span>
+                      <span class="text-[10px] font-bold text-[#18633B] bg-[#ECFDF3] px-2 py-0.5 rounded-full border border-[#D1FADF]">Ready</span>
+                    </div>
+                    <div class="space-y-1.5 pt-1">
+                      <div class="flex justify-between font-bold text-gray-900">
+                        <span>Caesar Salad</span>
+                        <span>x 3</span>
+                      </div>
+                      <div class="flex justify-between font-bold text-gray-900">
+                        <span>Tom Yum (Olena)</span>
+                        <span>x 1</span>
+                      </div>
+                    </div>
+                    <button onClick={() => showToast("Course 1 marked ready for waiter pickup")} class="w-full mt-2 py-2 bg-[#18633B] text-white font-bold rounded-xl text-xs">
+                      Mark Ready to Serve
+                    </button>
+                  </div>
+
+                  <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold uppercase text-gray-700 text-[11px]">Course 2: Mains (19:15)</span>
+                      <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Scheduled</span>
+                    </div>
+                    <div class="space-y-1.5 pt-1">
+                      <div class="flex justify-between font-bold text-gray-900">
+                        <span>Grilled Salmon with Herbs</span>
+                        <span>x 1</span>
+                      </div>
+                      <div class="flex justify-between font-bold text-gray-900">
+                        <span>Avocado Quinoa Bowl</span>
+                        <span>x 1</span>
+                      </div>
+                    </div>
+                    <button onClick={() => showToast("Course 2 scheduled for 19:15")} class="w-full mt-2 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold rounded-xl text-xs">
+                      Fire Course at 19:15
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
