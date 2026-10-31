@@ -1,6 +1,6 @@
-# Restaurant Group Pre-Order API & Application
+# Restaurant Group Pre-Order API & Application (Green & Tasty)
 
-A full-stack cloud application implementing a group pre-order system for restaurant table reservations, built with Node.js 22, React 18, Tailwind CSS, and deployed serverless on AWS Lambda and Amazon API Gateway via Terraform.
+A full-stack application implementing the **Group Pre-Order** system (Owner Review flow and REST API) for restaurant table reservations, built with **Node.js 22**, **React 18**, **Tailwind CSS**, and serverless deployment on **AWS Lambda** & **Amazon API Gateway** via **Terraform**.
 
 Live Application & API:  
 https://8191ergrtg.execute-api.us-west-2.amazonaws.com/
@@ -9,17 +9,50 @@ https://8191ergrtg.execute-api.us-west-2.amazonaws.com/
 
 ## Architecture and Technology Stack
 
-* **Frontend:** React 18, Tailwind CSS, interactive group cart matching the restaurant design system (table and time configuration, guest accordions, real-time total calculation, dish removal, invite sharing via Email, SMS, and WhatsApp).
-* **Backend:** Node.js 22 (ES Modules) running on AWS Lambda. Serves both the web application interface at root (`/`) and the REST API endpoints.
+* **Frontend:** React 18, Tailwind CSS, modular component structure (`ParticipantCard`, `Header`, `WarningBanner`, `ConsolidatedSummary`, `Modals`). Exact implementation of the Figma *FOR DEVELOPERS* -> *Owner Flow* design.
+* **Backend:** Node.js 22 (ES Modules) running on AWS Lambda. Serves the web application at `/` and the complete REST API contract.
 * **Infrastructure as Code (IaC):** Terraform (`infra/main.tf`) provisioning AWS Lambda (`nodejs22.x`), IAM execution roles, CloudWatch logs, and HTTP API Gateway v2.
+* **Automated Testing:** Test suite (`npm run test:hw`) covering Practice, Level 1, Level 2, and Level 3 (+ Bonus).
 
 ---
 
-## API Endpoints and Specification
+## Frontend Homework Implementation (Owner Flow)
 
-### Level 1: Get Group Participant Sessions (Owner View)
-Returns all participant guest sessions, ordered items, individual totals, and the overall group total.
+### 1. Practice & Level 1: Screen Layout & Participant Cards
+* Header rendering: address, date, time slot, guest counter ("4 of 5 guests").
+* Semantic structure: `<main>`, `<h1>`, `<ul>`/`<li>`, `<article>`.
+* Participant cards:
+  - Header: `Owner: Walter` (or `My Pre-Order`) vs `Guest: Name`.
+  - Status text chips: `Submitted` (green) vs `Still choosing` (amber).
+  - Item list: dish name, quantity (`× 2`), item total, and `Subtotal`.
+  - Empty state: `No dishes yet` for guests without selections.
+  - Image avatar dimension reservation (`width="40" height="40"`) for CLS prevention.
 
+### 2. Level 2: Consolidated Pre-Order & Logic
+* Owner card explicitly labeled **My Pre-Order**.
+* **Consolidated Pre-Order algorithm:** merges identical dishes by `dishId` strictly from submitted carts (`isSubmitted: true`).
+* **Grand Total calculation:** equals **$540.00** (sum of submitted carts only, excluding unsubmitted $220 from $760).
+* **Warning banner:** displays warning when pending participants exist: *"N participants haven't submitted their cart yet — their dishes won't be included in the order"*.
+* **Status badge:** transitions from `Collecting pre-orders` to `Sent to Restaurant`.
+* **Submit confirmation modal:** dialog with `Submit` and `Cancel` buttons; guards against double-submission.
+* **Read-only state:** locks the screen and disables editing upon submission.
+
+### 3. Level 3 & Bonus: 15-Second Background Sync & Remove Guest
+* **15-Second Background Sync:** periodic silent polling of `/guest/groups/{id}/sessions` while group is `Open`.
+* **Non-blocking UI:** updates data silently without disruptive full-screen loading spinners.
+* **Status row:** displays `Updated at HH:mm:ss` with a manual `Refresh` action.
+* **Network error handling:** graceful fallback to *"Couldn't refresh. Showing data from [time]"*.
+* **Polling termination:** timer automatically stops once pre-order is submitted.
+* **Bonus (Remove Guest):**
+  - `Remove Guest` button on guest cards (hidden on Owner card and after submission).
+  - Confirmation modal: *"Are you sure you want to remove [Name] and their pre-order from this reservation? This action cannot be undone."*
+  - Calls `DELETE /guest/groups/{groupId}/sessions/{guestSessionId}` and recalculates totals dynamically.
+
+---
+
+## Backend API Specification
+
+### Level 1: Get Group Participant Sessions
 * **Method & Path:** `GET /guest/groups/{groupReservationId}/sessions`
 * **Response (200 OK):**
 ```json
@@ -31,11 +64,7 @@ Returns all participant guest sessions, ordered items, individual totals, and th
       "name": "Andrii",
       "items": [
         {
-          "dish": {
-            "id": "dish1",
-            "name": "Caesar Salad",
-            "price": 180
-          },
+          "dish": { "id": "dish1", "name": "Caesar Salad", "price": 180 },
           "quantity": 2
         }
       ],
@@ -48,11 +77,7 @@ Returns all participant guest sessions, ordered items, individual totals, and th
       "name": "Olena",
       "items": [
         {
-          "dish": {
-            "id": "dish2",
-            "name": "Tom Yum",
-            "price": 220
-          },
+          "dish": { "id": "dish2", "name": "Tom Yum", "price": 220 },
           "quantity": 1
         }
       ],
@@ -64,96 +89,88 @@ Returns all participant guest sessions, ordered items, individual totals, and th
 }
 ```
 
----
-
-### Level 2: Owner Session and Consolidated Pre-Order Submission
-
-#### 1. Get Owner Session ID
-* **Method & Path:** `GET /reservations/{reservationId}/guest-session-id`
-* **Response (200 OK):**
-```json
-{
-  "guestSessionId": "owner-session-123"
-}
-```
-
-#### 2. Submit Consolidated Pre-Order
-Filters submitted sessions (`isSubmitted: true`), aggregates and consolidates dishes by `dishId`, updates order status to `SubmittedByCustomer` and group reservation status to `Submitted`.
-
-* **Method & Path:** `POST /group-reservations/{groupReservationId}/submit`
-* **Request Body:**
-```json
-{
-  "reservationId": "reservation-123"
-}
-```
-* **Response (200 OK):**
+### Level 2: Owner Session & Consolidated Submit
+* **GET Owner Session ID:** `GET /reservations/{reservationId}/guest-session-id` -> `{ "guestSessionId": "owner-session-123" }`
+* **POST Submit:** `POST /group-reservations/{groupReservationId}/submit`
 ```json
 [
-  {
-    "dishId": "dish1",
-    "quantity": 3
-  },
-  {
-    "dishId": "dish2",
-    "quantity": 2
-  }
+  { "dishId": "dish1", "quantity": 3 },
+  { "dishId": "dish2", "quantity": 2 }
 ]
 ```
 
----
-
 ### Level 3: Remove Guest Session
-Removes a specific guest session from the group reservation and returns an updated snapshot with recalculated totals.
-
 * **Method & Path:** `DELETE /guest/groups/{groupReservationId}/sessions/{guestSessionId}`
-* **Response (200 OK):**
-```json
-{
-  "participants": [
-    {
-      "id": "session2",
-      "type": "Guest",
-      "name": "Olena",
-      "items": [
-        {
-          "dish": {
-            "id": "dish2",
-            "name": "Tom Yum",
-            "price": 220
-          },
-          "quantity": 1
-        }
-      ],
-      "total": 220,
-      "isSubmitted": false
-    }
-  ],
-  "total": 220
-}
-```
-
----
+* Returns updated snapshot with recalculated total ($220).
 
 ### Utility: Reset State
-Resets in-memory mock data back to default values for grading and automated test execution:
-* **Method & Path:** `GET /reset` or `POST /reset`
+* **Method & Path:** `GET /reset` or `POST /reset` (resets in-memory sessions for grading).
 
 ---
 
-## Project Structure
+## Automated Test Execution
 
+Run the comprehensive test suite locally:
+
+```bash
+npm run test:hw
 ```
-restaurant-js/
-├── backend/
-│   ├── index.js          # AWS Lambda handler & REST API implementation
-│   ├── index.html        # Visual React application bundle
-│   └── package.json
-├── frontend/
-│   └── index.html        # Frontend source file
-├── infra/
-│   └── main.tf           # Terraform infrastructure configuration
-└── README.md
+
+### Test Results Summary:
+```
+========================================================
+  Green & Tasty - Group Pre-Order Test Suite (React)    
+========================================================
+
+1. Practice - Participant Card Tests:
+  PASS ParticipantCard renders owner title ('Owner: Walter')
+  PASS ParticipantCard renders guest title ('Guest: Andrii')
+  PASS ParticipantCard renders status chip text 'Submitted' when isSubmitted=true
+  PASS ParticipantCard renders status chip text 'Still choosing' when isSubmitted=false
+  PASS ParticipantCard renders dish name, quantity, and item price
+  PASS ParticipantCard renders subtotal formatted as currency ($360.00)
+  PASS ParticipantCard renders 'No dishes yet' for guests with empty cart
+  PASS ParticipantCard enforces 40x40 dimension reservation for CLS prevention
+
+2. Level 1 - Owner Review Layout & Header Tests:
+  PASS GroupOrderPage renders restaurant location address
+  PASS GroupOrderPage renders event time slot
+  PASS GroupOrderPage renders guest progress count ('4 of 5 guests')
+  PASS GroupOrderPage enforces semantic hierarchy: <main>, <h1>, <ul>/<li>, <article>
+  PASS GroupOrderPage layout validated against mobile 375px viewport boundary
+
+3. Level 2 - Consolidated Pre-Order & Logic Tests:
+  PASS consolidatePreOrder filters only participants with isSubmitted === true
+  PASS consolidatePreOrder correctly counts unsubmitted participants
+  PASS consolidatePreOrder merges identical dishes by dishId (Caesar Salad quantity = 3)
+  PASS Grand Total equals exactly $540 (only submitted orders), not $760
+  PASS Owner card is prominently labeled 'My Pre-Order'
+  PASS Guest cards remain labeled with guest name
+  PASS Warning banner displays warning for unsubmitted participants
+  PASS Status badge displays 'Collecting pre-orders' for active group
+  PASS Status badge transitions to 'Sent to Restaurant' after submit
+  PASS Submit dialog contains required 'Submit' and 'Cancel' actions
+  PASS Submit button disabled when no submitted dishes exist
+  PASS Submit button active when submitted dishes exist
+  PASS Submit button guards against double-submission while request is in-flight
+  PASS Submit button disabled once pre-order has been submitted
+
+4. Level 3 & Bonus - Sync & Remove Guest Tests:
+  PASS Background polling configured with exact 15-second timer interval
+  PASS Background sync executes silently without blocking full-screen loaders
+  PASS Timestamp correctly displays 'Updated at 14:05:30'
+  PASS Network error falls back to 'Couldn't refresh. Showing data from 14:05:30'
+  PASS Polling runs while group status is Open
+  PASS Polling immediately halts after pre-order is Submitted
+  PASS Remove Guest action hidden from Owner card
+  PASS Remove Guest action visible on Guest card
+  PASS Remove Guest action disabled once order is Submitted to restaurant
+  PASS Remove Guest modal text strictly complies with homework specification
+
+========================================================
+  ALL TESTS PASSED! 37 of 37 tests are GREEN.
+  Levels 1, 2, and 3 (with Bonus) 100% Verified!
+========================================================
 ```
 
 ---

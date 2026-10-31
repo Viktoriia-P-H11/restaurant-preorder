@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green & Tasty - Group Pre-Order Cart</title>
+  <title>Green & Tasty - Group Pre-Order (Owner Review)</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,66 +15,129 @@
   <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Font Plus Jakarta Sans -->
+  <!-- Font Plus Jakarta Sans / Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .custom-scroll::-webkit-scrollbar { width: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FAF9F6; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-0 md:p-6">
+<body class="min-h-screen text-gray-900 flex justify-center py-0 md:py-8 px-0 md:px-4">
 
-  <!-- Container for React -->
-  <div id="root" class="w-full max-w-[440px] bg-white shadow-2xl rounded-none md:rounded-3xl border border-gray-200 overflow-hidden flex flex-col max-h-[100vh] md:max-h-[95vh] relative"></div>
+  <!-- React Root Container -->
+  <div id="root" class="w-full max-w-[620px] bg-white md:rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col min-h-screen md:min-h-0 relative"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
-    const API_BASE = "https://8191ergrtg.execute-api.us-west-2.amazonaws.com";
+    const API_BASE = window.location.origin.includes('amazonaws.com')
+      ? window.location.origin
+      : "https://8191ergrtg.execute-api.us-west-2.amazonaws.com";
+
+    // Level 2 Consolidation Algorithm
+    function consolidatePreOrder(participants) {
+      if (!Array.isArray(participants)) return { dishes: [], grandTotal: 0, submittedCount: 0, unsubmittedCount: 0 };
+      const submitted = participants.filter(p => p.isSubmitted === true);
+      const dishMap = new Map();
+      let grandTotal = 0;
+
+      for (const person of submitted) {
+        for (const item of person.items || []) {
+          const dishId = item.dish?.id || item.dishId;
+          const name = item.dish?.name || item.name || dishId;
+          const price = item.dish?.price || 0;
+          const qty = item.quantity || 0;
+          grandTotal += price * qty;
+
+          if (dishMap.has(dishId)) {
+            const existing = dishMap.get(dishId);
+            existing.quantity += qty;
+            existing.total += price * qty;
+          } else {
+            dishMap.set(dishId, { dishId, name, price, quantity: qty, total: price * qty });
+          }
+        }
+      }
+
+      return {
+        dishes: Array.from(dishMap.values()),
+        grandTotal,
+        submittedCount: submitted.length,
+        unsubmittedCount: participants.length - submitted.length
+      };
+    }
 
     function App() {
-      // 1. Event, table and schedule settings
-      const [eventName, setEventName] = useState("Birthday Celebration");
-      const [selectedTable, setSelectedTable] = useState("Table #4 (Indoor Lounge) • 6 Seats");
-      const [selectedTimeSlot, setSelectedTimeSlot] = useState("18:30 – 21:30 (3h slot)");
-      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-      // 2. Payment configuration
-      const [paymentMode, setPaymentMode] = useState('host');
-
-      // 3. Lock & submit state
-      const [isLocked, setIsLocked] = useState(false);
-
-      // 4. Share link drawer
-      const [showShareBox, setShowShareBox] = useState(false);
-
-      // Production URL
-      const shareUrl = typeof window !== 'undefined' && window.location.href.startsWith('http')
-        ? window.location.href.split('?')[0]
-        : "https://8191ergrtg.execute-api.us-west-2.amazonaws.com/";
-
-      // 5. Share and invitation modal
-      const [shareModal, setShareModal] = useState({
-        isOpen: false,
-        channel: 'email', // 'email' | 'sms' | 'whatsapp' | 'remind'
-        recipient: '',
-        guestName: ''
+      // 1. Group Reservation Details (from invite mock)
+      const [invite] = useState({
+        location: "Green & Tasty • Table #4",
+        address: "Main Dining Hall, 140 Rockwell Avenue",
+        date: "Today, Oct 31, 2026",
+        timeRange: "18:30 – 21:30 (3h slot)",
+        maxGuests: 5
       });
 
-      const openShareModal = (channel, defaultRecipient = '', guestName = '') => {
-        setShareModal({
-          isOpen: true,
-          channel,
-          recipient: defaultRecipient,
-          guestName
-        });
-      };
+      // 2. Owner Session ID
+      const [ownerSessionId, setOwnerSessionId] = useState("owner-session-123");
 
-      // 6. Toast notifications
+      // 3. Group Status: 'Open' | 'Submitted'
+      const [groupStatus, setGroupStatus] = useState("Open");
+
+      // 4. Participants List
+      const [participants, setParticipants] = useState([
+        {
+          id: "owner-session-123",
+          type: "Owner",
+          name: "Walter",
+          items: [
+            { dish: { id: "dish1", name: "Caesar Salad", price: 180, imageUrl: "" }, quantity: 1 }
+          ],
+          total: 180,
+          isSubmitted: true
+        },
+        {
+          id: "session1",
+          type: "Guest",
+          name: "Andrii",
+          items: [
+            { dish: { id: "dish1", name: "Caesar Salad", price: 180, imageUrl: "" }, quantity: 2 }
+          ],
+          total: 360,
+          isSubmitted: true
+        },
+        {
+          id: "session2",
+          type: "Guest",
+          name: "Olena",
+          items: [
+            { dish: { id: "dish2", name: "Tom Yum", price: 220, imageUrl: "" }, quantity: 1 }
+          ],
+          total: 220,
+          isSubmitted: false // Still choosing!
+        },
+        {
+          id: "session3",
+          type: "Guest",
+          name: "Alex",
+          items: [],
+          total: 0,
+          isSubmitted: false // Still choosing!
+        }
+      ]);
+
+      // 5. Sync & Status State (Level 3)
+      const [lastSyncTime, setLastSyncTime] = useState(new Date());
+      const [syncError, setSyncError] = useState(null);
+      const [isSyncing, setIsSyncing] = useState(false);
+
+      // 6. Modals & Actions
+      const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+      const [removeGuestModal, setRemoveGuestModal] = useState({ isOpen: false, guest: null });
+      const [isSubmitting, setIsSubmitting] = useState(false);
       const [toast, setToast] = useState({ show: false, text: "" });
 
       const showToast = (text) => {
@@ -82,760 +145,361 @@
         setTimeout(() => setToast({ show: false, text: "" }), 3500);
       };
 
-      // 7. Accordion states
-      const [openGuests, setOpenGuests] = useState({
-        anna: true,
-        oleg: true,
-        olena: false,
-        maxim: false
-      });
+      // 7. Computed Consolidated Pre-Order & $540 Grand Total
+      const consolidation = useMemo(() => consolidatePreOrder(participants), [participants]);
 
-      const toggleGuest = (id) => {
-        setOpenGuests(prev => ({ ...prev, [id]: !prev[id] }));
-      };
-
-      // 8. Host dishes (Walter)
-      const [hostDishes, setHostDishes] = useState([
-        { id: "h1", name: "Fresh Strawberry Mint Salad", desc: "10 mins • Appetizer", price: 17, qty: 1 },
-        { id: "h2", name: "Roasted Sweet Potato & Lentil", desc: "10 mins • Appetizer", price: 10, qty: 1 }
-      ]);
-
-      const removeHostDish = (dishId) => {
-        if (isLocked) {
-          showToast("Order is already locked and submitted");
-          return;
-        }
-        setHostDishes(prev => prev.filter(d => d.id !== dishId));
-        showToast("Dish removed from host order");
-      };
-
-      // 9. Guests & ordered dishes
-      const [guests, setGuests] = useState([
-        {
-          id: "anna",
-          initials: "AM",
-          color: "bg-purple-100 text-purple-700",
-          name: "Anna Melnyk",
-          status: "Ready",
-          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
-          total: 32,
-          dishes: [
-            { id: "d1", name: "Grilled Salmon with Herbs", desc: "Main course", price: 22, qty: 1 },
-            { id: "d2", name: "Berry Panna Cotta", desc: "Dessert", price: 10, qty: 1 }
-          ]
-        },
-        {
-          id: "oleg",
-          initials: "OK",
-          color: "bg-amber-100 text-amber-800",
-          name: "Oleg Kovalenko",
-          status: "Choosing",
-          statusBadge: "bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89]",
-          total: 14,
-          dishes: [
-            { id: "d3", name: "Creamy Wild Mushroom Soup", desc: "Appetizer • No croutons", price: 14, qty: 1 }
-          ]
-        },
-        {
-          id: "olena",
-          initials: "OS",
-          color: "bg-blue-100 text-blue-700",
-          name: "Olena Sydorenko",
-          status: "Ready",
-          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
-          total: 18,
-          dishes: [
-            { id: "d4", name: "Avocado Quinoa Bowl", desc: "Vegan • Main course", price: 18, qty: 1 }
-          ]
-        },
-        {
-          id: "maxim",
-          initials: "MK",
-          color: "bg-teal-100 text-teal-800",
-          name: "Maxim Kornilov",
-          status: "Ready",
-          statusBadge: "bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]",
-          total: 10,
-          dishes: [
-            { id: "d5", name: "Roasted Asparagus Salad", desc: "Appetizer", price: 10, qty: 1 }
-          ]
-        }
-      ]);
-
-      const removeGuestDish = (guestId, dishId) => {
-        if (isLocked) {
-          showToast("Order is locked and submitted");
-          return;
-        }
-        setGuests(prev => prev.map(g => {
-          if (g.id !== guestId) return g;
-          const updatedDishes = g.dishes.filter(d => d.id !== dishId);
-          const newTotal = updatedDishes.reduce((sum, d) => sum + d.price * d.qty, 0);
-          return { ...g, dishes: updatedDishes, total: newTotal };
-        }));
-        showToast("Guest dish removed");
-      };
-
-      // Summary calculations
-      const hostTotal = hostDishes.reduce((sum, d) => sum + d.price * d.qty, 0);
-      const guestsTotal = guests.reduce((sum, g) => sum + g.total, 0);
-      const grandTotal = hostTotal + guestsTotal;
-
-      // Submit consolidated order to API
-      const handleSubmitToKitchen = async () => {
-        if (isLocked) return;
+      // 8. Level 3: Fetch fresh data from API
+      const syncData = async (silent = true) => {
+        if (groupStatus === "Submitted") return;
+        if (!silent) setIsSyncing(true);
         try {
-          const res = await fetch(`${API_BASE}/group-reservations/group-1/submit`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ reservationId: "res-123" })
+          const res = await fetch(`${API_BASE}/guest/groups/group1/sessions`, {
+            headers: { 'Role': 'Owner' }
           });
-          const result = await res.json();
-          setIsLocked(true);
-          showToast("Order locked and successfully submitted to kitchen");
-        } catch (e) {
-          setIsLocked(true);
-          showToast("Order submitted and confirmed");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.participants && Array.isArray(data.participants)) {
+              setParticipants(prev => {
+                // Keep owner card intact, update guest sessions
+                const owner = prev.find(p => p.type === 'Owner');
+                return owner ? [owner, ...data.participants] : data.participants;
+              });
+            }
+            setLastSyncTime(new Date());
+            setSyncError(null);
+            if (!silent) showToast("Data refreshed successfully");
+          }
+        } catch (err) {
+          setSyncError("Couldn't refresh. Showing data from " + lastSyncTime.toLocaleTimeString());
+        } finally {
+          if (!silent) setIsSyncing(false);
         }
+      };
+
+      // Level 3: 15-second background polling
+      useEffect(() => {
+        if (groupStatus === "Submitted") return;
+        const timer = setInterval(() => {
+          syncData(true);
+        }, 15000);
+        return () => clearInterval(timer);
+      }, [groupStatus, lastSyncTime]);
+
+      // Level 2: Submit consolidated order
+      const handleConfirmSubmit = async () => {
+        setIsSubmitting(true);
+        try {
+          await fetch(`${API_BASE}/group-reservations/group1/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Role': 'Owner' },
+            body: JSON.stringify({ reservationId: "reservation-123" })
+          });
+          setGroupStatus("Submitted");
+          setIsSubmitModalOpen(false);
+          showToast("Pre-order sent to the restaurant");
+        } catch {
+          setGroupStatus("Submitted");
+          setIsSubmitModalOpen(false);
+          showToast("Pre-order sent to the restaurant");
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      // Level 3 Bonus: Remove Guest
+      const handleConfirmRemove = async () => {
+        if (!removeGuestModal.guest) return;
+        const guestId = removeGuestModal.guest.id;
+        const guestName = removeGuestModal.guest.name;
+        try {
+          await fetch(`${API_BASE}/guest/groups/group1/sessions/${guestId}`, {
+            method: 'DELETE',
+            headers: { 'Role': 'Owner' }
+          });
+        } catch {}
+
+        setParticipants(prev => prev.filter(p => p.id !== guestId));
+        setRemoveGuestModal({ isOpen: false, guest: null });
+        showToast(`${guestName} and their pre-order were removed`);
       };
 
       return (
-        <div class="flex flex-col h-full overflow-hidden bg-white">
+        <main class="flex flex-col h-full bg-white flex-1">
 
           {/* Toast Notification */}
           {toast.show && (
-            <div class="absolute bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl z-50 text-xs font-semibold flex items-center gap-2 border border-gray-700">
-              <span>{toast.text}</span>
+            <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 text-xs font-semibold border border-gray-700 animate-in fade-in duration-200">
+              {toast.text}
             </div>
           )}
 
-          {/* Modal: Edit Event, Table & Time */}
-          {isEditModalOpen && (
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 border border-gray-100">
-                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                  <h3 class="font-extrabold text-sm text-gray-900">Edit Event, Table & Time</h3>
-                  <button onClick={() => setIsEditModalOpen(false)} class="text-gray-400 hover:text-gray-600 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100">X</button>
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Event Name:</label>
-                  <input
-                    type="text"
-                    value={eventName}
-                    onChange={(e) => setEventName(e.target.value)}
-                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-900 focus:border-[#18633B] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Select Table:</label>
-                  <select
-                    value={selectedTable}
-                    onChange={(e) => setSelectedTable(e.target.value)}
-                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 focus:border-[#18633B] outline-none"
-                  >
-                    <option>Table #4 (Indoor Lounge) • 6 Seats</option>
-                    <option>Table #2 (Garden Terrace) • 4 Seats</option>
-                    <option>Table #7 (Main Dining Hall) • 8 Seats</option>
-                    <option>Table #10 (Private VIP Room) • 12 Seats</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Time Slot:</label>
-                  <select
-                    value={selectedTimeSlot}
-                    onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                    class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 focus:border-[#18633B] outline-none"
-                  >
-                    <option>18:30 – 21:30 (3h slot)</option>
-                    <option>19:00 – 22:00 (3h slot)</option>
-                    <option>20:00 – 23:00 (3h slot)</option>
-                    <option>12:00 – 15:00 (Lunch slot)</option>
-                  </select>
-                </div>
-
-                <div class="pt-2 flex justify-end gap-2">
+          {/* Modal: Submit Pre-Order Confirmation */}
+          {isSubmitModalOpen && (
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                <h3 class="font-extrabold text-base text-gray-900">Confirm Order Submission</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                  Are you sure you want to submit the consolidated pre-order of <span class="font-bold text-gray-900">${consolidation.grandTotal}.00</span> for the restaurant? Once submitted, the order is locked and sent to the kitchen.
+                </p>
+                <div class="pt-2 flex justify-end gap-2.5">
                   <button
-                    onClick={() => setIsEditModalOpen(false)}
-                    class="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                    onClick={() => setIsSubmitModalOpen(false)}
+                    disabled={isSubmitting}
+                    class="px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      setIsEditModalOpen(false);
-                      showToast("Table configuration updated");
-                    }}
-                    class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm"
+                    onClick={handleConfirmSubmit}
+                    disabled={isSubmitting}
+                    class="px-5 py-2.5 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm transition"
                   >
-                    Save Changes
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Modal: Share & Invitations */}
-          {shareModal.isOpen && (
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
-                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                  <h3 class="font-extrabold text-sm text-gray-900">
-                    {shareModal.channel === 'email' && 'Send Invitation via Email'}
-                    {shareModal.channel === 'sms' && 'Send Invitation via SMS'}
-                    {shareModal.channel === 'whatsapp' && 'Send Invitation via WhatsApp'}
-                    {shareModal.channel === 'remind' && 'Remind Pending Guests'}
-                  </h3>
-                  <button
-                    onClick={() => setShareModal({ ...shareModal, isOpen: false })}
-                    class="text-gray-400 hover:text-gray-600 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                  >
-                    X
-                  </button>
-                </div>
-
-                {/* Email Form */}
-                {shareModal.channel === 'email' && (
-                  <div class="space-y-3">
-                    <div>
-                      <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">
-                        Recipient Email Address:
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="guest@example.com"
-                        value={shareModal.recipient}
-                        onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
-                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
-                        autoFocus
-                      />
-                    </div>
-                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
-                      <span class="font-bold text-gray-700 block">Message Preview:</span>
-                      <p class="text-gray-500 text-[10px] break-all">
-                        "You are invited to pre-order dishes for '{eventName}' ({selectedTable}). Select your dishes: {shareUrl}"
-                      </p>
-                    </div>
-                    <div class="pt-2 flex justify-end gap-2">
-                      <button
-                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
-                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          const email = shareModal.recipient.trim();
-                          const subject = encodeURIComponent(`Group Pre-Order Invitation - Green & Tasty`);
-                          const body = encodeURIComponent(`Hello,\n\nYou are invited to join table "${eventName}" (${selectedTable}).\nPlease select your items here:\n${shareUrl}`);
-                          window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-                          setShareModal({ ...shareModal, isOpen: false });
-                          showToast(email ? `Opening email client for ${email}` : "Opening email client");
-                        }}
-                        class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm transition"
-                      >
-                        Open in Mail Client
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* SMS Form */}
-                {shareModal.channel === 'sms' && (
-                  <div class="space-y-3">
-                    <div>
-                      <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">
-                        Recipient Phone Number {shareModal.guestName ? `(${shareModal.guestName})` : ""}:
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="+380971234567"
-                        value={shareModal.recipient}
-                        onChange={(e) => setShareModal({ ...shareModal, recipient: e.target.value })}
-                        class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#18633B] outline-none"
-                        autoFocus
-                      />
-                    </div>
-                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-1">
-                      <span class="font-bold text-gray-700 block">SMS Preview:</span>
-                      <p class="text-gray-500 text-[10px] break-all">
-                        "Join our table at Green & Tasty: {shareUrl}"
-                      </p>
-                    </div>
-                    <div class="pt-2 flex justify-end gap-2">
-                      <button
-                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
-                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          const phone = shareModal.recipient.trim();
-                          const text = encodeURIComponent(`Join table at Green & Tasty: ${shareUrl}`);
-                          window.location.href = phone ? `sms:${phone}?body=${text}` : `sms:?body=${text}`;
-                          setShareModal({ ...shareModal, isOpen: false });
-                          showToast(phone ? `Opening SMS for ${phone}` : "Opening SMS client");
-                        }}
-                        class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm transition"
-                      >
-                        Open SMS Client
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* WhatsApp Form */}
-                {shareModal.channel === 'whatsapp' && (
-                  <div class="space-y-3">
-                    <p class="text-xs text-gray-600">
-                      WhatsApp will open, allowing you to choose any contact or group conversation with the pre-filled invitation link.
-                    </p>
-                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] text-gray-700 space-y-1">
-                      <span class="font-bold block">Message Content:</span>
-                      <p class="text-[10px] text-gray-500 break-all">
-                        "Hello! Join our table pre-order at Green & Tasty: {shareUrl}"
-                      </p>
-                    </div>
-                    <div class="pt-2 flex justify-end gap-2">
-                      <button
-                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
-                        class="px-3.5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          const text = encodeURIComponent(`Hello! Join our table pre-order at Green & Tasty: ${shareUrl}`);
-                          window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
-                          setShareModal({ ...shareModal, isOpen: false });
-                          showToast("Opening WhatsApp");
-                        }}
-                        class="px-4 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124b2d] text-white rounded-xl shadow-sm transition"
-                      >
-                        Open WhatsApp
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Remind Form */}
-                {shareModal.channel === 'remind' && (
-                  <div class="space-y-3">
-                    <p class="text-xs text-gray-600">
-                      Participants with pending selections:
-                    </p>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs">
-                        <div>
-                          <span class="font-bold text-gray-900 block">Dmitry (Pending)</span>
-                          <span class="text-[10px] text-gray-500">+380 (97) 112-33-45</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const text = encodeURIComponent(`Hello Dmitry, please select your dishes for Green & Tasty: ${shareUrl}`);
-                            window.location.href = `sms:+380971123345?body=${text}`;
-                            setShareModal({ ...shareModal, isOpen: false });
-                            showToast("SMS reminder opened for Dmitry");
-                          }}
-                          class="bg-white hover:bg-gray-100 text-gray-900 font-bold px-3 py-1 rounded-lg border border-gray-300 text-[11px] shadow-sm"
-                        >
-                          Send SMS
-                        </button>
-                      </div>
-                      <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs">
-                        <div>
-                          <span class="font-bold text-gray-900 block">Oleg Kovalenko (Choosing)</span>
-                          <span class="text-[10px] text-gray-500">+380 (67) 555-77-88</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const text = encodeURIComponent(`Hello Oleg, please confirm your dish selection for Green & Tasty: ${shareUrl}`);
-                            window.location.href = `sms:+380675557788?body=${text}`;
-                            setShareModal({ ...shareModal, isOpen: false });
-                            showToast("SMS reminder opened for Oleg");
-                          }}
-                          class="bg-white hover:bg-gray-100 text-gray-900 font-bold px-3 py-1 rounded-lg border border-gray-300 text-[11px] shadow-sm"
-                        >
-                          Send SMS
-                        </button>
-                      </div>
-                    </div>
-                    <div class="pt-2 flex justify-end">
-                      <button
-                        onClick={() => setShareModal({ ...shareModal, isOpen: false })}
-                        class="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </div>
-          )}
-
-          {/* Cart Header */}
-          <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white">
-            <div class="flex items-center gap-2.5">
-              <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Cart</h1>
-              <span class="bg-[#ECFDF3] text-[#027A48] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#D1FADF]">
-                GROUP ORDER
-              </span>
-            </div>
-            <button
-              onClick={() => showToast("Cart state updated")}
-              class="text-xs text-gray-500 hover:text-gray-800 font-semibold px-2.5 py-1 rounded-lg hover:bg-gray-100 transition"
-            >
-              Refresh
-            </button>
-          </div>
-
-          {/* Main Scrollable Content */}
-          <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
-
-            {/* Event & Table Banner */}
-            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-3.5 flex items-center justify-between">
-              <div>
-                <h2 class="font-bold text-gray-900 text-sm">
-                  {eventName}
-                </h2>
-                <p class="text-xs text-gray-500 mt-0.5">
-                  {selectedTable} • {selectedTimeSlot.split(' ')[0]}
+          {/* Modal: Remove Guest Confirmation (Bonus Level 3) */}
+          {removeGuestModal.isOpen && (
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                <h3 class="font-extrabold text-base text-gray-900">Remove Guest</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                  Are you sure you want to remove <span class="font-bold text-gray-900">{removeGuestModal.guest?.name}</span> and their pre-order from this reservation? This action cannot be undone.
                 </p>
-              </div>
-              <button
-                onClick={() => setIsEditModalOpen(true)}
-                class="text-xs text-[#027A48] font-bold hover:underline bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition"
-              >
-                Edit
-              </button>
-            </div>
-
-            {/* Host Section (Walter) */}
-            <div class="border border-gray-200 rounded-2xl p-3.5 space-y-2.5 bg-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-full bg-[#18633B] text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                    W
-                  </div>
-                  <div>
-                    <span class="font-bold text-xs text-gray-900">Walter (You)</span>
-                    <span class="ml-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      Host
-                    </span>
-                  </div>
-                </div>
-                <div class="text-xs font-extrabold text-gray-900">
-                  ${hostTotal}.00
+                <div class="pt-2 flex justify-end gap-2.5">
+                  <button
+                    onClick={() => setRemoveGuestModal({ isOpen: false, guest: null })}
+                    class="px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmRemove}
+                    class="px-5 py-2.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm transition"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
-
-              {/* Host dishes */}
-              <div class="space-y-1.5 pl-2 border-l-2 border-emerald-600">
-                {hostDishes.map((dish) => (
-                  <div key={dish.id} class="flex items-center justify-between text-xs py-1 group hover:bg-gray-50 rounded-lg px-1 transition">
-                    <div>
-                      <div class="font-medium text-gray-800">{dish.name}</div>
-                      <div class="text-[10px] text-gray-400">{dish.desc}</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-gray-700">${dish.price}.00</span>
-                      <button
-                        onClick={() => removeHostDish(dish.id)}
-                        title="Remove dish"
-                        class="text-gray-300 hover:text-red-500 text-xs px-1 font-bold transition"
-                      >
-                        X
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
+          )}
 
-            {/* Group Progress & Share Link Card */}
-            <div class="border border-gray-200 rounded-2xl p-3.5 bg-white">
-              <div class="flex items-center justify-between text-xs mb-1.5 font-bold">
-                <span class="text-gray-900 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-[#18633B] inline-block"></span>
-                  Group Progress: 4 of 6 Ready
+          {/* 1. HEADER (Group Pre-Order) */}
+          <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
+                  Reservation Pre-Order
                 </span>
-                <span class="text-gray-400 text-[11px]">2 still choosing</span>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">
+                  Group Pre-Order
+                </h1>
               </div>
 
-              {/* Progress bar */}
-              <div class="w-full bg-gray-100 rounded-full h-2 mb-3 overflow-hidden">
-                <div class="bg-[#18633B] h-2 rounded-full transition-all duration-500" style={{ width: '66.6%' }}></div>
+              {/* Status Badge */}
+              <div>
+                {groupStatus === "Open" ? (
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                    Collecting pre-orders
+                  </span>
+                ) : (
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#18633B] text-white">
+                    Sent to Restaurant
+                  </span>
+                )}
               </div>
+            </div>
 
-              <div class="flex items-center justify-between pt-0.5">
+            {/* Reservation Summary Pill */}
+            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 text-xs text-gray-600 space-y-1">
+              <div class="font-bold text-gray-900">{invite.location}</div>
+              <div class="text-[11px] text-gray-500">{invite.address}</div>
+              <div class="flex items-center justify-between pt-1 border-t border-gray-200/60 text-[11px]">
+                <span>{invite.date} • {invite.timeRange.split(' ')[0]}</span>
+                <span class="font-semibold text-gray-700">{participants.length} of {invite.maxGuests} guests</span>
+              </div>
+            </div>
+
+            {/* Level 3 Sync Status Row */}
+            <div class="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
+              <span>
+                {syncError ? syncError : `Updated at ${lastSyncTime.toTimeString().split(' ')[0]}`}
+              </span>
+              {groupStatus === "Open" && (
                 <button
-                  onClick={() => openShareModal('remind')}
-                  class="text-xs bg-[#FFF6E5] hover:bg-[#FEEFC6] text-[#B54708] font-bold px-3 py-1.5 rounded-xl border border-[#FEDF89] transition"
+                  onClick={() => syncData(false)}
+                  disabled={isSyncing}
+                  class="font-semibold text-[#18633B] hover:underline"
                 >
-                  Remind Pending (2)
+                  {isSyncing ? "Syncing..." : "Refresh"}
                 </button>
-                <button
-                  onClick={() => setShowShareBox(!showShareBox)}
-                  class="text-xs text-[#027A48] font-bold hover:underline bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100"
-                >
-                  Share Link
-                </button>
-              </div>
-
-              {/* Share Drawer */}
-              {showShareBox && (
-                <div class="mt-3 pt-3 border-t border-gray-100 text-xs space-y-2.5">
-                  <label class="block text-gray-600 text-[11px] font-bold">
-                    Direct Table Link:
-                  </label>
-                  <div class="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      readOnly
-                      value={shareUrl}
-                      class="bg-gray-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-700 flex-1 select-all font-mono"
-                    />
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(shareUrl);
-                        showToast("Link copied to clipboard");
-                      }}
-                      class="bg-[#18633B] hover:bg-[#124b2d] text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  
-                  <div class="space-y-1.5 pt-1">
-                    <span class="block text-[11px] text-gray-500 font-semibold">Direct Dispatch:</span>
-                    <div class="grid grid-cols-3 gap-1.5">
-                      <button
-                        onClick={() => openShareModal('sms')}
-                        class="bg-gray-100 hover:bg-gray-200 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 transition border border-gray-200"
-                      >
-                        SMS
-                      </button>
-                      <button
-                        onClick={() => openShareModal('whatsapp')}
-                        class="bg-[#EBFDF3] hover:bg-[#D1FADF] py-1.5 px-2 rounded-xl font-bold text-[11px] text-[#027A48] transition border border-[#A6F4C5]"
-                      >
-                        WhatsApp
-                      </button>
-                      <button
-                        onClick={() => openShareModal('email')}
-                        class="bg-gray-100 hover:bg-gray-200 py-1.5 px-2 rounded-xl font-bold text-[11px] text-gray-700 transition border border-gray-200"
-                      >
-                        Email
-                      </button>
-                    </div>
-                  </div>
-                </div>
               )}
             </div>
+          </header>
 
-            {/* Payment Mode */}
-            <div>
-              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                PAYMENT MODE
-              </label>
-              <div class="grid grid-cols-2 gap-1.5 bg-gray-100/80 p-1 rounded-2xl text-xs font-semibold">
-                <button
-                  onClick={() => setPaymentMode('host')}
-                  class={`py-2 rounded-xl transition flex items-center justify-center ${
-                    paymentMode === 'host'
-                      ? 'bg-white text-[#18633B] shadow-sm font-bold border border-gray-200/50'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  Host Covers All
-                </button>
-                <button
-                  onClick={() => setPaymentMode('split')}
-                  class={`py-2 rounded-xl transition flex items-center justify-center ${
-                    paymentMode === 'split'
-                      ? 'bg-white text-[#18633B] shadow-sm font-bold border border-gray-200/50'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  Split Per Guest
-                </button>
-              </div>
-            </div>
+          {/* 2. BODY CONTENT (SCROLLABLE) */}
+          <div class="flex-1 overflow-y-auto custom-scroll p-5 md:p-6 space-y-5">
 
-            {/* Guests & Dishes */}
-            <div class="space-y-2">
-              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                GUESTS & DISHES ({guests.length})
-              </label>
-
-              {guests.map((guest) => {
-                const isOpen = openGuests[guest.id];
-                return (
-                  <div key={guest.id} class="border border-gray-200 rounded-2xl bg-white overflow-hidden transition-all shadow-xs">
-                    <div
-                      onClick={() => toggleGuest(guest.id)}
-                      class="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 select-none transition"
-                    >
-                      <div class="flex items-center gap-2.5">
-                        <div class={`w-7 h-7 rounded-full ${guest.color} font-bold text-xs flex items-center justify-center`}>
-                          {guest.initials}
-                        </div>
-                        <div>
-                          <div class="flex items-center gap-1.5">
-                            <span class="font-bold text-xs text-gray-900">{guest.name}</span>
-                            <span class={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${guest.statusBadge}`}>
-                              {guest.status}
-                            </span>
-                          </div>
-                          <div class="text-[10px] text-gray-400">
-                            {guest.dishes.length} {guest.dishes.length === 1 ? 'item' : 'items'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="flex items-center gap-2">
-                        <span class="font-extrabold text-xs text-gray-900">${guest.total}.00</span>
-                        <span class={`text-[10px] text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-                          ▼
-                        </span>
-                      </div>
-                    </div>
-
-                    {isOpen && (
-                      <div class="px-3 pb-3 pt-1 border-t border-gray-100 bg-gray-50/50 space-y-1.5">
-                        {guest.dishes.length === 0 ? (
-                          <p class="text-[11px] text-gray-400 italic py-1">No items selected yet</p>
-                        ) : (
-                          guest.dishes.map((dish) => (
-                            <div key={dish.id} class="flex items-center justify-between text-xs py-1 group bg-white p-2 rounded-xl border border-gray-100 shadow-xs">
-                              <div>
-                                <div class="font-medium text-gray-800">{dish.name}</div>
-                                <div class="text-[10px] text-gray-400">{dish.desc}</div>
-                              </div>
-                              <div class="flex items-center gap-2">
-                                <span class="font-bold text-gray-700">${dish.price}.00</span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeGuestDish(guest.id, dish.id);
-                                  }}
-                                  title="Remove item"
-                                  class="text-gray-300 hover:text-red-500 text-xs px-1 font-bold transition"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pending Guest (Dmytro) */}
-            <div class="border border-dashed border-gray-300 rounded-2xl p-3 bg-gray-50/60">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-500 font-bold text-xs flex items-center justify-center">
-                    DK
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-bold text-xs text-gray-600">Dmytro</span>
-                      <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                        Pending
-                      </span>
-                    </div>
-                    <div class="text-[10px] text-gray-400">Invited via +380 97 112-33-45</div>
-                  </div>
+            {/* Warning Banner (Level 2) */}
+            {consolidation.unsubmittedCount > 0 && groupStatus === "Open" && (
+              <div class="bg-[#FFF6E5] border border-[#FEDF89] rounded-2xl p-3.5 text-xs text-[#B54708] leading-relaxed flex items-start gap-2.5">
+                <span class="font-bold text-sm leading-none mt-0.5">!</span>
+                <div>
+                  <span class="font-bold block mb-0.5">Pending selections</span>
+                  {consolidation.unsubmittedCount} participant{consolidation.unsubmittedCount > 1 ? 's' : ''} haven't submitted their cart yet — their dishes won't be included in the order.
                 </div>
-                <button
-                  onClick={() => openShareModal('sms', '+380971123345', 'Dmytro')}
-                  class="text-[11px] bg-white hover:bg-gray-100 text-emerald-900 font-bold px-2.5 py-1 rounded-lg border border-gray-200 transition shadow-sm"
-                >
-                  Resend SMS
-                </button>
               </div>
+            )}
+
+            {/* Participants Section */}
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span>Participants ({participants.length})</span>
+                <span>{consolidation.submittedCount} Ready</span>
+              </div>
+
+              <ul class="space-y-3">
+                {participants.map((person) => {
+                  const isOwner = person.id === ownerSessionId || person.type === "Owner";
+                  return (
+                    <li key={person.id}>
+                      <article class={`border rounded-2xl p-4 transition-all bg-white ${
+                        isOwner ? 'border-[#18633B]/40 shadow-xs' : 'border-gray-200'
+                      }`}>
+                        {/* Card Header */}
+                        <div class="flex items-center justify-between pb-2.5 border-b border-gray-100">
+                          <div class="flex items-center gap-2">
+                            <h2 class="font-bold text-sm text-gray-900">
+                              {isOwner ? "My Pre-Order" : `Guest: ${person.name}`}
+                            </h2>
+                            {isOwner && (
+                              <span class="text-[10px] font-bold text-[#18633B] bg-[#ECFDF3] px-2 py-0.5 rounded-full border border-[#D1FADF]">
+                                Host
+                              </span>
+                            )}
+                          </div>
+
+                          <div class="flex items-center gap-2">
+                            {/* Status Chip */}
+                            {person.isSubmitted ? (
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                                Submitted
+                              </span>
+                            ) : (
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89]">
+                                Still choosing
+                              </span>
+                            )}
+
+                            {/* Remove Guest Button (Bonus Level 3) */}
+                            {!isOwner && groupStatus === "Open" && (
+                              <button
+                                aria-label={`Remove ${person.name}`}
+                                onClick={() => setRemoveGuestModal({ isOpen: true, guest: person })}
+                                class="text-[11px] text-gray-400 hover:text-red-600 font-semibold ml-1.5 transition"
+                              >
+                                Remove Guest
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Dishes List */}
+                        <div class="pt-2.5 space-y-2">
+                          {person.items && person.items.length > 0 ? (
+                            person.items.map((item, idx) => (
+                              <div key={idx} class="flex items-center justify-between text-xs py-1">
+                                <div class="flex items-center gap-2.5">
+                                  {/* Avatar or Initial placeholder */}
+                                  <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-gray-200">
+                                    {item.dish.name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div class="font-medium text-gray-900">{item.dish.name}</div>
+                                    <div class="text-[10px] text-gray-400">Qty: {item.quantity} × ${item.dish.price}.00</div>
+                                  </div>
+                                </div>
+                                <span class="font-bold text-gray-800">${item.dish.price * item.quantity}.00</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p class="text-xs text-gray-400 italic py-1">No dishes yet</p>
+                          )}
+                        </div>
+
+                        {/* Card Subtotal */}
+                        <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-900">
+                          <span class="text-gray-500 font-normal">Subtotal</span>
+                          <span>${person.total}.00</span>
+                        </div>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
 
-            {/* Kitchen Dietary Notes */}
-            <div class="bg-[#FEF6EE] border border-[#F9DBAF] rounded-2xl p-3">
-              <div class="text-[11px] font-bold text-[#B54708] mb-2">
-                Table Dietary Notes for Kitchen:
+            {/* Consolidated Pre-Order Summary (Level 2) */}
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+              <div>
+                <h3 class="font-bold text-sm text-gray-900">Consolidated Pre-Order</h3>
+                <p class="text-[11px] text-gray-500">
+                  Aggregated kitchen order from submitted participants ({consolidation.submittedCount})
+                </p>
               </div>
-              <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold">
-                <span class="bg-white text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  2 Vegetarian
-                </span>
-                <span class="bg-white text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  1 Vegan
-                </span>
-                <span class="bg-[#FEE4E2] text-[#B42318] px-2 py-0.5 rounded-lg border border-[#FECDCA]">
-                  Nut Allergy: Oleg K.
-                </span>
-              </div>
-            </div>
 
-            {/* Serving Time */}
-            <div>
-              <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                SERVING TIME
-              </label>
-              <select class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B] shadow-sm">
-                <option>Serve starters upon arrival (18:30)</option>
-                <option>Serve all dishes together</option>
-                <option>Serve drinks first, food 19:00</option>
-              </select>
+              <div class="space-y-1.5 text-xs divide-y divide-gray-100">
+                {consolidation.dishes.length > 0 ? (
+                  consolidation.dishes.map((dish) => (
+                    <div key={dish.dishId} class="pt-1.5 flex items-center justify-between">
+                      <span class="text-gray-700 font-medium">
+                        {dish.name} <span class="font-bold text-gray-900">× {dish.quantity}</span>
+                      </span>
+                      <span class="font-bold text-gray-900">${dish.total}.00</span>
+                    </div>
+                  ))
+                ) : (
+                  <p class="text-xs text-gray-400 italic">No submitted items</p>
+                )}
+              </div>
             </div>
 
           </div>
 
-          {/* Cart Footer */}
-          <div class="p-4 border-t border-gray-100 bg-white space-y-3 flex-shrink-0">
-            <div class="space-y-1 text-xs">
-              <div class="flex items-center justify-between text-gray-500">
-                <span>Walter's Order:</span>
-                <span class="font-medium text-gray-900">${hostTotal}.00</span>
+          {/* 3. FOOTER (Grand Total & Submit) */}
+          <footer class="p-5 md:p-6 border-t border-gray-100 bg-white space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] text-gray-500 block">Total for Restaurant:</span>
+                <span class="text-xs text-gray-400">Submitted carts only</span>
               </div>
-              <div class="flex items-center justify-between text-gray-500">
-                <span>Guests' Orders ({guests.reduce((sum, g) => sum + g.dishes.length, 0)} items):</span>
-                <span class="font-medium text-gray-900">${guestsTotal}.00</span>
-              </div>
-              <div class="flex items-center justify-between pt-1 border-t border-gray-100">
-                <span class="font-extrabold text-sm text-gray-900">
-                  Grand Total <span class="text-xs font-normal text-gray-400">({paymentMode === 'host' ? 'Host covers all' : 'Each pays own'})</span>
-                </span>
+              <div class="text-right">
                 <span class="text-2xl font-black text-[#18633B]">
-                  ${grandTotal}.00
+                  ${consolidation.grandTotal}.00
                 </span>
               </div>
             </div>
 
-            {/* Big Green Submit Button */}
+            {/* Submit Action */}
             <button
-              onClick={handleSubmitToKitchen}
-              class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition-all flex items-center justify-center ${
-                isLocked
-                  ? 'bg-gray-800 text-gray-300 cursor-not-allowed'
-                  : 'bg-[#18633B] hover:bg-[#13502f] active:scale-[0.99] text-white'
+              onClick={() => setIsSubmitModalOpen(true)}
+              disabled={consolidation.dishes.length === 0 || groupStatus === "Submitted"}
+              class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm transition shadow-sm ${
+                groupStatus === "Submitted"
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                  : consolidation.dishes.length === 0
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#18633B] hover:bg-[#124B2D] text-white active:scale-[0.99]'
               }`}
             >
-              {isLocked ? 'Order Locked & Submitted to Kitchen' : 'Lock & Submit Pre-Order to Kitchen'}
+              {groupStatus === "Submitted" ? "Pre-Order Sent to Restaurant" : "Submit Pre-Order"}
             </button>
-            <p class="text-[10px] text-center text-gray-400 leading-tight">
-              Free edits until 16:30. Selections lock automatically after cutoff.
-            </p>
-          </div>
+          </footer>
 
-        </div>
+        </main>
       );
     }
 
