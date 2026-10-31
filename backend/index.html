@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green & Tasty - Group Pre-Order (Owner Review)</title>
+  <title>Green & Tasty - Restaurant & Group Pre-Order</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,24 +15,24 @@
   <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Font Plus Jakarta Sans / Poppins -->
+  <!-- Font Poppins / Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FAF9F6; }
-    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    body { font-family: 'Poppins', 'Plus Jakarta Sans', sans-serif; background-color: #FAF9F6; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen text-gray-900 flex justify-center py-0 md:py-8 px-0 md:px-4">
+<body class="min-h-screen text-gray-900 flex flex-col">
 
   <!-- React Root Container -->
-  <div id="root" class="w-full max-w-[620px] bg-white md:rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col min-h-screen md:min-h-0 relative"></div>
+  <div id="root" class="w-full flex-1 flex flex-col"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo } = React;
 
     const API_BASE = window.location.origin.includes('amazonaws.com')
       ? window.location.origin
@@ -72,29 +72,150 @@
     }
 
     function App() {
-      // 1. Group Reservation Details (from invite mock)
-      const [invite] = useState({
-        location: "Green & Tasty • Table #4",
-        address: "Main Dining Hall, 140 Rockwell Avenue",
-        date: "Today, Oct 31, 2026",
-        timeRange: "18:30 – 21:30 (3h slot)",
-        maxGuests: 5
-      });
+      // Navigation Tab: 'main' | 'book' | 'reservations' | 'group-order'
+      const [activePage, setActivePage] = useState('main');
 
-      // 2. Owner Session ID
-      const [ownerSessionId, setOwnerSessionId] = useState("owner-session-123");
+      // Selected Dish Modal on Main Page
+      const [selectedDishModal, setSelectedDishModal] = useState(null);
+      const [dishModalQty, setDishModalQty] = useState(1);
 
-      // 3. Group Status: 'Open' | 'Submitted'
+      // Toast Notification
+      const [toast, setToast] = useState({ show: false, text: "" });
+      const showToast = (text) => {
+        setToast({ show: true, text });
+        setTimeout(() => setToast({ show: false, text: "" }), 3500);
+      };
+
+      // ----------------------------------------------------
+      // DATA: POPULAR DISHES (from Figma)
+      // ----------------------------------------------------
+      const popularDishes = [
+        {
+          id: "dish1",
+          name: "Fresh Strawberry Mint Salad",
+          price: 17,
+          weight: "430g",
+          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+          desc: "Fresh strawberries, organic mixed greens, creamy feta cheese, garden mint, and sweet poppy seed dressing.",
+          calories: "430 kcal",
+          protein: "12.00g",
+          fats: "14.00g",
+          carbs: "28.00g"
+        },
+        {
+          id: "dish2",
+          name: "Roasted Sweet Potato & Lentil",
+          price: 10,
+          weight: "380g",
+          image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+          desc: "Warm roasted sweet potato chunks with black lentils, baby spinach, pomegranate seeds, and tahini drizzle.",
+          calories: "380 kcal",
+          protein: "14.50g",
+          fats: "8.00g",
+          carbs: "42.00g"
+        },
+        {
+          id: "dish3",
+          name: "Avocado Quinoa Bowl",
+          price: 18,
+          weight: "410g",
+          image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
+          desc: "Fluffy tri-color quinoa, ripe Hass avocado, cherry tomatoes, cucumbers, edamame, and herb citrus dressing.",
+          calories: "410 kcal",
+          protein: "11.00g",
+          fats: "19.00g",
+          carbs: "34.00g"
+        },
+        {
+          id: "dish4",
+          name: "Grilled Salmon with Herbs",
+          price: 22,
+          weight: "350g",
+          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80",
+          desc: "Wild Atlantic salmon fillet pan-seared with fresh rosemary, thyme, garlic butter, and grilled asparagus.",
+          calories: "520 kcal",
+          protein: "38.00g",
+          fats: "26.00g",
+          carbs: "4.00g"
+        }
+      ];
+
+      // ----------------------------------------------------
+      // DATA: LOCATIONS (from Figma)
+      // ----------------------------------------------------
+      const locations = [
+        {
+          id: "loc1",
+          name: "48 Rustaveli Avenue",
+          rating: "4.9",
+          reviewsCount: "128 reviews",
+          hours: "Daily 10:00 – 23:00",
+          image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          id: "loc2",
+          name: "14 Baratashvili Street",
+          rating: "4.8",
+          reviewsCount: "94 reviews",
+          hours: "Daily 11:00 – 23:00",
+          image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          id: "loc3",
+          name: "9 Abashidze Street",
+          rating: "4.9",
+          reviewsCount: "142 reviews",
+          hours: "Daily 10:00 – 00:00",
+          image: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=600&q=80"
+        }
+      ];
+
+      // ----------------------------------------------------
+      // DATA: CUSTOMER REVIEWS (from Figma)
+      // ----------------------------------------------------
+      const reviews = [
+        {
+          id: "r1",
+          author: "Elena Rostova",
+          rating: 5,
+          date: "Oct 24, 2026",
+          text: "Green & Tasty has become our family favorite! The Georgian salads are amazingly authentic yet light. The group pre-order feature made our birthday dinner totally seamless."
+        },
+        {
+          id: "r2",
+          author: "Alex Morgan",
+          rating: 5,
+          date: "Oct 20, 2026",
+          text: "Exceptional atmosphere on Rustaveli Ave. Ordered ahead with friends so all dishes arrived right as we sat down. Roasted Sweet Potato salad is unbelievable!"
+        },
+        {
+          id: "r3",
+          author: "David Chen",
+          rating: 5,
+          date: "Oct 15, 2026",
+          text: "Best dining experience in town. High quality ingredients, impeccable service, and the digital table reservation flow worked without a hitch."
+        }
+      ];
+
+      // ----------------------------------------------------
+      // GROUP PRE-ORDER HOMEWORK STATE (Owner Flow)
+      // ----------------------------------------------------
+      const [ownerSessionId] = useState("owner-session-123");
       const [groupStatus, setGroupStatus] = useState("Open");
+      const [lastSyncTime, setLastSyncTime] = useState(new Date());
+      const [syncError, setSyncError] = useState(null);
+      const [isSyncing, setIsSyncing] = useState(false);
+      const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+      const [removeGuestModal, setRemoveGuestModal] = useState({ isOpen: false, guest: null });
+      const [isSubmitting, setIsSubmitting] = useState(false);
 
-      // 4. Participants List
       const [participants, setParticipants] = useState([
         {
           id: "owner-session-123",
           type: "Owner",
           name: "Walter",
           items: [
-            { dish: { id: "dish1", name: "Caesar Salad", price: 180, imageUrl: "" }, quantity: 1 }
+            { dish: { id: "dish1", name: "Caesar Salad", price: 180 }, quantity: 1 }
           ],
           total: 180,
           isSubmitted: true
@@ -104,7 +225,7 @@
           type: "Guest",
           name: "Andrii",
           items: [
-            { dish: { id: "dish1", name: "Caesar Salad", price: 180, imageUrl: "" }, quantity: 2 }
+            { dish: { id: "dish1", name: "Caesar Salad", price: 180 }, quantity: 2 }
           ],
           total: 360,
           isSubmitted: true
@@ -114,10 +235,10 @@
           type: "Guest",
           name: "Olena",
           items: [
-            { dish: { id: "dish2", name: "Tom Yum", price: 220, imageUrl: "" }, quantity: 1 }
+            { dish: { id: "dish2", name: "Tom Yum", price: 220 }, quantity: 1 }
           ],
           total: 220,
-          isSubmitted: false // Still choosing!
+          isSubmitted: false
         },
         {
           id: "session3",
@@ -125,30 +246,13 @@
           name: "Alex",
           items: [],
           total: 0,
-          isSubmitted: false // Still choosing!
+          isSubmitted: false
         }
       ]);
 
-      // 5. Sync & Status State (Level 3)
-      const [lastSyncTime, setLastSyncTime] = useState(new Date());
-      const [syncError, setSyncError] = useState(null);
-      const [isSyncing, setIsSyncing] = useState(false);
-
-      // 6. Modals & Actions
-      const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-      const [removeGuestModal, setRemoveGuestModal] = useState({ isOpen: false, guest: null });
-      const [isSubmitting, setIsSubmitting] = useState(false);
-      const [toast, setToast] = useState({ show: false, text: "" });
-
-      const showToast = (text) => {
-        setToast({ show: true, text });
-        setTimeout(() => setToast({ show: false, text: "" }), 3500);
-      };
-
-      // 7. Computed Consolidated Pre-Order & $540 Grand Total
       const consolidation = useMemo(() => consolidatePreOrder(participants), [participants]);
 
-      // 8. Level 3: Fetch fresh data from API
+      // Level 3 background sync
       const syncData = async (silent = true) => {
         if (groupStatus === "Submitted") return;
         if (!silent) setIsSyncing(true);
@@ -160,32 +264,27 @@
             const data = await res.json();
             if (data.participants && Array.isArray(data.participants)) {
               setParticipants(prev => {
-                // Keep owner card intact, update guest sessions
                 const owner = prev.find(p => p.type === 'Owner');
                 return owner ? [owner, ...data.participants] : data.participants;
               });
             }
             setLastSyncTime(new Date());
             setSyncError(null);
-            if (!silent) showToast("Data refreshed successfully");
+            if (!silent) showToast("Group pre-order data synced with cloud");
           }
-        } catch (err) {
+        } catch {
           setSyncError("Couldn't refresh. Showing data from " + lastSyncTime.toLocaleTimeString());
         } finally {
           if (!silent) setIsSyncing(false);
         }
       };
 
-      // Level 3: 15-second background polling
       useEffect(() => {
         if (groupStatus === "Submitted") return;
-        const timer = setInterval(() => {
-          syncData(true);
-        }, 15000);
+        const timer = setInterval(() => syncData(true), 15000);
         return () => clearInterval(timer);
       }, [groupStatus, lastSyncTime]);
 
-      // Level 2: Submit consolidated order
       const handleConfirmSubmit = async () => {
         setIsSubmitting(true);
         try {
@@ -194,19 +293,13 @@
             headers: { 'Content-Type': 'application/json', 'Role': 'Owner' },
             body: JSON.stringify({ reservationId: "reservation-123" })
           });
-          setGroupStatus("Submitted");
-          setIsSubmitModalOpen(false);
-          showToast("Pre-order sent to the restaurant");
-        } catch {
-          setGroupStatus("Submitted");
-          setIsSubmitModalOpen(false);
-          showToast("Pre-order sent to the restaurant");
-        } finally {
-          setIsSubmitting(false);
-        }
+        } catch {}
+        setGroupStatus("Submitted");
+        setIsSubmitModalOpen(false);
+        setIsSubmitting(false);
+        showToast("Pre-order sent to the restaurant");
       };
 
-      // Level 3 Bonus: Remove Guest
       const handleConfirmRemove = async () => {
         if (!removeGuestModal.guest) return;
         const guestId = removeGuestModal.guest.id;
@@ -217,14 +310,13 @@
             headers: { 'Role': 'Owner' }
           });
         } catch {}
-
         setParticipants(prev => prev.filter(p => p.id !== guestId));
         setRemoveGuestModal({ isOpen: false, guest: null });
         showToast(`${guestName} and their pre-order were removed`);
       };
 
       return (
-        <main class="flex flex-col h-full bg-white flex-1">
+        <div class="flex-1 flex flex-col bg-[#FAF9F6]">
 
           {/* Toast Notification */}
           {toast.show && (
@@ -233,273 +325,581 @@
             </div>
           )}
 
-          {/* Modal: Submit Pre-Order Confirmation */}
-          {isSubmitModalOpen && (
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
-                <h3 class="font-extrabold text-base text-gray-900">Confirm Order Submission</h3>
-                <p class="text-xs text-gray-600 leading-relaxed">
-                  Are you sure you want to submit the consolidated pre-order of <span class="font-bold text-gray-900">${consolidation.grandTotal}.00</span> for the restaurant? Once submitted, the order is locked and sent to the kitchen.
-                </p>
-                <div class="pt-2 flex justify-end gap-2.5">
-                  <button
-                    onClick={() => setIsSubmitModalOpen(false)}
-                    disabled={isSubmitting}
-                    class="px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmSubmit}
-                    disabled={isSubmitting}
-                    class="px-5 py-2.5 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm transition"
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit"}
-                  </button>
-                </div>
+          {/* GLOBAL NAVBAR (Matching Figma) */}
+          <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xs">
+            {/* Logo */}
+            <div class="flex items-center gap-2 cursor-pointer" onClick={() => setActivePage('main')}>
+              <div class="w-8 h-8 rounded-full bg-[#18633B] text-white flex items-center justify-center font-black text-sm">
+                G
               </div>
+              <span class="font-extrabold text-lg text-gray-900 tracking-tight">Green &amp; Tasty</span>
             </div>
-          )}
 
-          {/* Modal: Remove Guest Confirmation (Bonus Level 3) */}
-          {removeGuestModal.isOpen && (
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
-                <h3 class="font-extrabold text-base text-gray-900">Remove Guest</h3>
-                <p class="text-xs text-gray-600 leading-relaxed">
-                  Are you sure you want to remove <span class="font-bold text-gray-900">{removeGuestModal.guest?.name}</span> and their pre-order from this reservation? This action cannot be undone.
-                </p>
-                <div class="pt-2 flex justify-end gap-2.5">
-                  <button
-                    onClick={() => setRemoveGuestModal({ isOpen: false, guest: null })}
-                    class="px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmRemove}
-                    class="px-5 py-2.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 1. HEADER (Group Pre-Order) */}
-          <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
-                  Reservation Pre-Order
+            {/* Navigation Links */}
+            <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
+              <button
+                onClick={() => setActivePage('main')}
+                class={`transition pb-1 ${activePage === 'main' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Main page
+              </button>
+              <button
+                onClick={() => setActivePage('book')}
+                class={`transition pb-1 ${activePage === 'book' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Book a Table
+              </button>
+              <button
+                onClick={() => setActivePage('reservations')}
+                class={`transition pb-1 ${activePage === 'reservations' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                Reservations
+              </button>
+              <button
+                onClick={() => setActivePage('group-order')}
+                class={`transition pb-1 flex items-center gap-1.5 ${activePage === 'group-order' ? 'text-[#18633B] font-bold border-b-2 border-[#18633B]' : 'hover:text-gray-900'}`}
+              >
+                <span>Owner Review</span>
+                <span class="bg-[#ECFDF3] text-[#027A48] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D1FADF]">
+                  Homework
                 </span>
-                <h1 class="text-2xl font-black text-gray-900 tracking-tight">
-                  Group Pre-Order
-                </h1>
-              </div>
-
-              {/* Status Badge */}
-              <div>
-                {groupStatus === "Open" ? (
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
-                    Collecting pre-orders
-                  </span>
-                ) : (
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#18633B] text-white">
-                    Sent to Restaurant
-                  </span>
-                )}
-              </div>
+              </button>
             </div>
 
-            {/* Reservation Summary Pill */}
-            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 text-xs text-gray-600 space-y-1">
-              <div class="font-bold text-gray-900">{invite.location}</div>
-              <div class="text-[11px] text-gray-500">{invite.address}</div>
-              <div class="flex items-center justify-between pt-1 border-t border-gray-200/60 text-[11px]">
-                <span>{invite.date} • {invite.timeRange.split(' ')[0]}</span>
-                <span class="font-semibold text-gray-700">{participants.length} of {invite.maxGuests} guests</span>
+            {/* Right Profile / Sign In */}
+            <div class="flex items-center gap-3">
+              <button
+                onClick={() => setActivePage('group-order')}
+                class="hidden sm:inline-flex bg-[#18633B] hover:bg-[#124B2D] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition"
+              >
+                Group Order ($540)
+              </button>
+              <div class="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-700">
+                W
               </div>
             </div>
+          </nav>
 
-            {/* Level 3 Sync Status Row */}
-            <div class="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
-              <span>
-                {syncError ? syncError : `Updated at ${lastSyncTime.toTimeString().split(' ')[0]}`}
-              </span>
-              {groupStatus === "Open" && (
-                <button
-                  onClick={() => syncData(false)}
-                  disabled={isSyncing}
-                  class="font-semibold text-[#18633B] hover:underline"
-                >
-                  {isSyncing ? "Syncing..." : "Refresh"}
-                </button>
-              )}
-            </div>
-          </header>
+          {/* ========================================================= */}
+          {/* PAGE 1: MAIN LANDING PAGE (Exact Figma Design)           */}
+          {/* ========================================================= */}
+          {activePage === 'main' && (
+            <div class="flex-1 space-y-12 pb-16">
 
-          {/* 2. BODY CONTENT (SCROLLABLE) */}
-          <div class="flex-1 overflow-y-auto custom-scroll p-5 md:p-6 space-y-5">
-
-            {/* Warning Banner (Level 2) */}
-            {consolidation.unsubmittedCount > 0 && groupStatus === "Open" && (
-              <div class="bg-[#FFF6E5] border border-[#FEDF89] rounded-2xl p-3.5 text-xs text-[#B54708] leading-relaxed flex items-start gap-2.5">
-                <span class="font-bold text-sm leading-none mt-0.5">!</span>
-                <div>
-                  <span class="font-bold block mb-0.5">Pending selections</span>
-                  {consolidation.unsubmittedCount} participant{consolidation.unsubmittedCount > 1 ? 's' : ''} haven't submitted their cart yet — their dishes won't be included in the order.
-                </div>
-              </div>
-            )}
-
-            {/* Participants Section */}
-            <div class="space-y-3">
-              <div class="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <span>Participants ({participants.length})</span>
-                <span>{consolidation.submittedCount} Ready</span>
-              </div>
-
-              <ul class="space-y-3">
-                {participants.map((person) => {
-                  const isOwner = person.id === ownerSessionId || person.type === "Owner";
-                  return (
-                    <li key={person.id}>
-                      <article class={`border rounded-2xl p-4 transition-all bg-white ${
-                        isOwner ? 'border-[#18633B]/40 shadow-xs' : 'border-gray-200'
-                      }`}>
-                        {/* Card Header */}
-                        <div class="flex items-center justify-between pb-2.5 border-b border-gray-100">
-                          <div class="flex items-center gap-2">
-                            <h2 class="font-bold text-sm text-gray-900">
-                              {isOwner ? "My Pre-Order" : `Guest: ${person.name}`}
-                            </h2>
-                            {isOwner && (
-                              <span class="text-[10px] font-bold text-[#18633B] bg-[#ECFDF3] px-2 py-0.5 rounded-full border border-[#D1FADF]">
-                                Host
-                              </span>
-                            )}
-                          </div>
-
-                          <div class="flex items-center gap-2">
-                            {/* Status Chip */}
-                            {person.isSubmitted ? (
-                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
-                                Submitted
-                              </span>
-                            ) : (
-                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89]">
-                                Still choosing
-                              </span>
-                            )}
-
-                            {/* Remove Guest Button (Bonus Level 3) */}
-                            {!isOwner && groupStatus === "Open" && (
-                              <button
-                                aria-label={`Remove ${person.name}`}
-                                onClick={() => setRemoveGuestModal({ isOpen: true, guest: person })}
-                                class="text-[11px] text-gray-400 hover:text-red-600 font-semibold ml-1.5 transition"
-                              >
-                                Remove Guest
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Dishes List */}
-                        <div class="pt-2.5 space-y-2">
-                          {person.items && person.items.length > 0 ? (
-                            person.items.map((item, idx) => (
-                              <div key={idx} class="flex items-center justify-between text-xs py-1">
-                                <div class="flex items-center gap-2.5">
-                                  {/* Avatar or Initial placeholder */}
-                                  <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-gray-200">
-                                    {item.dish.name.charAt(0)}
-                                  </div>
-                                  <div>
-                                    <div class="font-medium text-gray-900">{item.dish.name}</div>
-                                    <div class="text-[10px] text-gray-400">Qty: {item.quantity} × ${item.dish.price}.00</div>
-                                  </div>
-                                </div>
-                                <span class="font-bold text-gray-800">${item.dish.price * item.quantity}.00</span>
-                              </div>
-                            ))
-                          ) : (
-                            <p class="text-xs text-gray-400 italic py-1">No dishes yet</p>
-                          )}
-                        </div>
-
-                        {/* Card Subtotal */}
-                        <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-900">
-                          <span class="text-gray-500 font-normal">Subtotal</span>
-                          <span>${person.total}.00</span>
-                        </div>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            {/* Consolidated Pre-Order Summary (Level 2) */}
-            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
-              <div>
-                <h3 class="font-bold text-sm text-gray-900">Consolidated Pre-Order</h3>
-                <p class="text-[11px] text-gray-500">
-                  Aggregated kitchen order from submitted participants ({consolidation.submittedCount})
-                </p>
-              </div>
-
-              <div class="space-y-1.5 text-xs divide-y divide-gray-100">
-                {consolidation.dishes.length > 0 ? (
-                  consolidation.dishes.map((dish) => (
-                    <div key={dish.dishId} class="pt-1.5 flex items-center justify-between">
-                      <span class="text-gray-700 font-medium">
-                        {dish.name} <span class="font-bold text-gray-900">× {dish.quantity}</span>
-                      </span>
-                      <span class="font-bold text-gray-900">${dish.total}.00</span>
+              {/* HERO SECTION */}
+              <div class="max-w-6xl mx-auto px-4 md:px-8 pt-6 md:pt-10">
+                <div class="bg-[#EBF7EE] rounded-3xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden border border-[#D4EED8]">
+                  <div class="max-w-md space-y-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-[#18633B]">Welcome to Green &amp; Tasty</span>
+                    <h1 class="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+                      Green by nature,<br/>Georgian by heart.
+                    </h1>
+                    <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+                      Discover authentic Georgian gastronomy crafted with fresh, organic ingredients. Reserve your table and coordinate shared group pre-orders effortlessly.
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => setActivePage('book')}
+                        class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs md:text-sm px-6 py-3 rounded-2xl shadow-sm transition"
+                      >
+                        Book a Table
+                      </button>
+                      <button
+                        onClick={() => setActivePage('group-order')}
+                        class="bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-bold text-xs md:text-sm px-6 py-3 rounded-2xl transition"
+                      >
+                        Owner Group Review
+                      </button>
                     </div>
-                  ))
-                ) : (
-                  <p class="text-xs text-gray-400 italic">No submitted items</p>
-                )}
+                  </div>
+
+                  <div class="w-full md:w-1/2 flex justify-center">
+                    <img
+                      src="https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80"
+                      alt="Salad bowls"
+                      class="rounded-3xl shadow-xl w-full max-w-sm md:max-w-md object-cover h-64 md:h-80"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* MOST POPULAR DISHES */}
+              <div class="max-w-6xl mx-auto px-4 md:px-8 space-y-6">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h2 class="text-xl md:text-2xl font-black text-gray-900">Most Popular Dishes</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Click any dish to inspect nutrition and portion details</p>
+                  </div>
+                  <button onClick={() => setActivePage('group-order')} class="text-xs font-bold text-[#18633B] hover:underline">
+                    View in Group Cart &rarr;
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {popularDishes.map((dish) => (
+                    <div
+                      key={dish.id}
+                      onClick={() => { setSelectedDishModal(dish); setDishModalQty(1); }}
+                      class="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                    >
+                      <div class="space-y-3">
+                        <div class="overflow-hidden rounded-xl h-44 bg-gray-100">
+                          <img
+                            src={dish.image}
+                            alt={dish.name}
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-sm text-gray-900 leading-snug group-hover:text-[#18633B] transition">
+                            {dish.name}
+                          </h3>
+                          <p class="text-[11px] text-gray-400 mt-0.5">{dish.weight}</p>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
+                        <span class="font-black text-base text-gray-900">${dish.price}.00</span>
+                        <span class="text-xs font-bold text-[#18633B] bg-[#ECFDF3] px-3 py-1 rounded-xl border border-[#D1FADF]">
+                          View
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* LOCATIONS */}
+              <div class="max-w-6xl mx-auto px-4 md:px-8 space-y-6">
+                <div>
+                  <h2 class="text-xl md:text-2xl font-black text-gray-900">Locations</h2>
+                  <p class="text-xs text-gray-500 mt-0.5">Visit us in the heart of the city</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {locations.map((loc) => (
+                    <div key={loc.id} class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-xs flex flex-col">
+                      <img src={loc.image} alt={loc.name} class="w-full h-48 object-cover" />
+                      <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                          <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-gray-900">{loc.name}</h3>
+                            <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                              ★ {loc.rating}
+                            </span>
+                          </div>
+                          <p class="text-xs text-gray-400 mt-1">{loc.reviewsCount} • {loc.hours}</p>
+                        </div>
+                        <button
+                          onClick={() => setActivePage('book')}
+                          class="w-full text-xs font-bold text-[#18633B] hover:bg-[#ECFDF3] py-2.5 rounded-xl border border-[#18633B] transition"
+                        >
+                          Book at this location
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CUSTOMER REVIEWS */}
+              <div class="max-w-6xl mx-auto px-4 md:px-8 space-y-6">
+                <div>
+                  <h2 class="text-xl md:text-2xl font-black text-gray-900">Customer Reviews</h2>
+                  <p class="text-xs text-gray-500 mt-0.5">What our guests say about dining with us</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {reviews.map((rev) => (
+                    <div key={rev.id} class="bg-white rounded-2xl p-5 border border-gray-200 shadow-xs space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-gray-900">{rev.author}</span>
+                        <div class="text-amber-500 text-xs font-bold">★★★★★</div>
+                      </div>
+                      <p class="text-xs text-gray-600 leading-relaxed italic">"{rev.text}"</p>
+                      <div class="text-[10px] text-gray-400 border-t border-gray-100 pt-2">{rev.date}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* DISH DETAIL MODAL (Matching Figma)                        */}
+          {/* ========================================================= */}
+          {selectedDishModal && (
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                  <h3 class="font-extrabold text-base text-gray-900">{selectedDishModal.name}</h3>
+                  <button onClick={() => setSelectedDishModal(null)} class="text-gray-400 hover:text-gray-600 font-bold text-sm">X</button>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                  <img src={selectedDishModal.image} alt={selectedDishModal.name} class="w-full sm:w-44 h-44 rounded-2xl object-cover" />
+                  <div class="space-y-2 text-xs text-gray-600 flex-1">
+                    <p class="leading-relaxed">{selectedDishModal.desc}</p>
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px] space-y-1">
+                      <span class="font-bold text-gray-800 block">Nutrition Information:</span>
+                      <div class="text-gray-500">
+                        Calories: <span class="font-semibold text-gray-700">{selectedDishModal.calories}</span><br/>
+                        Protein: <span class="font-semibold text-gray-700">{selectedDishModal.protein}</span> | Fats: <span class="font-semibold text-gray-700">{selectedDishModal.fats}</span> | Carbs: <span class="font-semibold text-gray-700">{selectedDishModal.carbs}</span>
+                      </div>
+                    </div>
+                    <div class="font-black text-base text-[#18633B] pt-1">
+                      ${selectedDishModal.price}.00 <span class="text-xs font-normal text-gray-400">/ {selectedDishModal.weight}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden">
+                    <button onClick={() => setDishModalQty(Math.max(1, dishModalQty - 1))} class="px-3 py-1 text-gray-600 hover:bg-gray-100 font-bold">-</button>
+                    <span class="px-4 py-1 text-xs font-bold text-gray-800">{dishModalQty}</span>
+                    <button onClick={() => setDishModalQty(dishModalQty + 1)} class="px-3 py-1 text-gray-600 hover:bg-gray-100 font-bold">+</button>
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button onClick={() => setSelectedDishModal(null)} class="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+                    <button
+                      onClick={() => {
+                        setSelectedDishModal(null);
+                        showToast(`Added ${dishModalQty} × ${selectedDishModal.name} to pre-order selection`);
+                      }}
+                      class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm"
+                    >
+                      Confirm Selection
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-          </div>
-
-          {/* 3. FOOTER (Grand Total & Submit) */}
-          <footer class="p-5 md:p-6 border-t border-gray-100 bg-white space-y-3">
-            <div class="flex items-center justify-between">
+          {/* ========================================================= */}
+          {/* PAGE 2: BOOK A TABLE PAGE                                 */}
+          {/* ========================================================= */}
+          {activePage === 'book' && (
+            <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
               <div>
-                <span class="text-[11px] text-gray-500 block">Total for Restaurant:</span>
-                <span class="text-xs text-gray-400">Submitted carts only</span>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-900">Book a Table</h1>
+                <p class="text-xs text-gray-500 mt-1">Select location, party size, and schedule a table reservation</p>
               </div>
-              <div class="text-right">
-                <span class="text-2xl font-black text-[#18633B]">
-                  ${consolidation.grandTotal}.00
-                </span>
+
+              <div class="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Location</label>
+                    <select class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]">
+                      <option>48 Rustaveli Avenue (Main Dining Hall)</option>
+                      <option>14 Baratashvili Street (Terrace)</option>
+                      <option>9 Abashidze Street (Lounge)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Date</label>
+                    <input type="date" defaultValue="2026-10-31" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Party Size</label>
+                    <select class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-medium text-gray-800 outline-none focus:border-[#18633B]">
+                      <option>5 Guests (Group Reservation)</option>
+                      <option>2 Guests</option>
+                      <option>4 Guests</option>
+                      <option>8 Guests</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 space-y-3">
+                  <label class="block text-xs font-bold text-gray-700 uppercase">Available Time Slots</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">12:00 – 14:00</button>
+                    <button class="p-3 rounded-xl border border-[#18633B] bg-[#ECFDF3] text-xs font-bold text-[#18633B]">18:30 – 21:30</button>
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">19:00 – 22:00</button>
+                    <button class="p-3 rounded-xl border border-gray-200 text-xs font-semibold hover:border-[#18633B] text-gray-700">20:00 – 23:00</button>
+                  </div>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setActivePage('group-order');
+                      showToast("Table reserved. Proceeding to Group Pre-Order Owner Review.");
+                    }}
+                    class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-sm transition"
+                  >
+                    Confirm &amp; Manage Group Pre-Order &rarr;
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Submit Action */}
-            <button
-              onClick={() => setIsSubmitModalOpen(true)}
-              disabled={consolidation.dishes.length === 0 || groupStatus === "Submitted"}
-              class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm transition shadow-sm ${
-                groupStatus === "Submitted"
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  : consolidation.dishes.length === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-[#18633B] hover:bg-[#124B2D] text-white active:scale-[0.99]'
-              }`}
-            >
-              {groupStatus === "Submitted" ? "Pre-Order Sent to Restaurant" : "Submit Pre-Order"}
-            </button>
-          </footer>
+          {/* ========================================================= */}
+          {/* PAGE 3: RESERVATIONS LIST PAGE                             */}
+          {/* ========================================================= */}
+          {activePage === 'reservations' && (
+            <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6 flex-1">
+              <div>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-900">Your Reservations</h1>
+                <p class="text-xs text-gray-500 mt-1">Manage booked tables and review guest pre-orders</p>
+              </div>
 
-        </main>
+              <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-extrabold text-base text-gray-900">Table #4 (Main Dining Hall)</span>
+                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                      Group Active
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500">140 Rockwell Avenue • Today, 18:30 – 21:30 • 5 Guests</p>
+                </div>
+
+                <button
+                  onClick={() => setActivePage('group-order')}
+                  class="bg-[#18633B] hover:bg-[#124B2D] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition"
+                >
+                  Open Owner Review &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* PAGE 4: GROUP PRE-ORDER (OWNER FLOW HOMEWORK)             */}
+          {/* ========================================================= */}
+          {activePage === 'group-order' && (
+            <div class="flex-1 flex justify-center py-4 md:py-8 px-0 md:px-4">
+              <main class="w-full max-w-[620px] bg-white md:rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+
+                {/* Submit Modal */}
+                {isSubmitModalOpen && (
+                  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                      <h3 class="font-extrabold text-base text-gray-900">Confirm Order Submission</h3>
+                      <p class="text-xs text-gray-600 leading-relaxed">
+                        Are you sure you want to submit the consolidated pre-order of <span class="font-bold text-gray-900">${consolidation.grandTotal}.00</span> for the restaurant? Once submitted, the order is locked and sent to the kitchen.
+                      </p>
+                      <div class="pt-2 flex justify-end gap-2.5">
+                        <button onClick={() => setIsSubmitModalOpen(false)} class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
+                        <button onClick={handleConfirmSubmit} class="px-5 py-2 text-xs font-bold bg-[#18633B] hover:bg-[#124B2D] text-white rounded-xl shadow-sm">
+                          {isSubmitting ? "Submitting..." : "Submit"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Remove Guest Modal */}
+                {removeGuestModal.isOpen && (
+                  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-100">
+                      <h3 class="font-extrabold text-base text-gray-900">Remove Guest</h3>
+                      <p class="text-xs text-gray-600 leading-relaxed">
+                        Are you sure you want to remove <span class="font-bold text-gray-900">{removeGuestModal.guest?.name}</span> and their pre-order from this reservation? This action cannot be undone.
+                      </p>
+                      <div class="pt-2 flex justify-end gap-2.5">
+                        <button onClick={() => setRemoveGuestModal({ isOpen: false, guest: null })} class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
+                        <button onClick={handleConfirmRemove} class="px-5 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* HEADER */}
+                <header class="p-5 md:p-6 border-b border-gray-100 bg-white space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">Reservation Pre-Order</span>
+                      <h1 class="text-2xl font-black text-gray-900 tracking-tight">Group Pre-Order</h1>
+                    </div>
+                    <div>
+                      {groupStatus === "Open" ? (
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                          Collecting pre-orders
+                        </span>
+                      ) : (
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#18633B] text-white">
+                          Sent to Restaurant
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 text-xs text-gray-600 space-y-1">
+                    <div class="font-bold text-gray-900">Green &amp; Tasty • Table #4</div>
+                    <div class="text-[11px] text-gray-500">Main Dining Hall, 140 Rockwell Avenue</div>
+                    <div class="flex items-center justify-between pt-1 border-t border-gray-200/60 text-[11px]">
+                      <span>Today • 18:30 – 21:30</span>
+                      <span class="font-semibold text-gray-700">{participants.length} of 5 guests</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
+                    <span>{syncError ? syncError : `Updated at ${lastSyncTime.toTimeString().split(' ')[0]}`}</span>
+                    {groupStatus === "Open" && (
+                      <button onClick={() => syncData(false)} disabled={isSyncing} class="font-semibold text-[#18633B] hover:underline">
+                        {isSyncing ? "Syncing..." : "Refresh"}
+                      </button>
+                    )}
+                  </div>
+                </header>
+
+                {/* SCROLLABLE BODY */}
+                <div class="flex-1 overflow-y-auto custom-scroll p-5 md:p-6 space-y-5">
+                  {consolidation.unsubmittedCount > 0 && groupStatus === "Open" && (
+                    <div class="bg-[#FFF6E5] border border-[#FEDF89] rounded-2xl p-3.5 text-xs text-[#B54708] leading-relaxed flex items-start gap-2.5">
+                      <span class="font-bold text-sm leading-none mt-0.5">!</span>
+                      <div>
+                        <span class="font-bold block mb-0.5">Pending selections</span>
+                        {consolidation.unsubmittedCount} participant{consolidation.unsubmittedCount > 1 ? 's' : ''} haven't submitted their cart yet — their dishes won't be included in the order.
+                      </div>
+                    </div>
+                  )}
+
+                  <div class="space-y-3">
+                    <div class="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <span>Participants ({participants.length})</span>
+                      <span>{consolidation.submittedCount} Ready</span>
+                    </div>
+
+                    <ul class="space-y-3">
+                      {participants.map((person) => {
+                        const isOwner = person.id === ownerSessionId || person.type === "Owner";
+                        return (
+                          <li key={person.id}>
+                            <article class={`border rounded-2xl p-4 transition-all bg-white ${
+                              isOwner ? 'border-[#18633B]/40 shadow-xs' : 'border-gray-200'
+                            }`}>
+                              <div class="flex items-center justify-between pb-2.5 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                  <h2 class="font-bold text-sm text-gray-900">
+                                    {isOwner ? "My Pre-Order" : `Guest: ${person.name}`}
+                                  </h2>
+                                  {isOwner && (
+                                    <span class="text-[10px] font-bold text-[#18633B] bg-[#ECFDF3] px-2 py-0.5 rounded-full border border-[#D1FADF]">
+                                      Host
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                  {person.isSubmitted ? (
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#D1FADF]">
+                                      Submitted
+                                    </span>
+                                  ) : (
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF6E5] text-[#B54708] border border-[#FEDF89]">
+                                      Still choosing
+                                    </span>
+                                  )}
+
+                                  {!isOwner && groupStatus === "Open" && (
+                                    <button
+                                      aria-label={`Remove ${person.name}`}
+                                      onClick={() => setRemoveGuestModal({ isOpen: true, guest: person })}
+                                      class="text-[11px] text-gray-400 hover:text-red-600 font-semibold ml-1.5 transition"
+                                    >
+                                      Remove Guest
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div class="pt-2.5 space-y-2">
+                                {person.items && person.items.length > 0 ? (
+                                  person.items.map((item, idx) => (
+                                    <div key={idx} class="flex items-center justify-between text-xs py-1">
+                                      <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-gray-200">
+                                          {item.dish.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                          <div class="font-medium text-gray-900">{item.dish.name}</div>
+                                          <div class="text-[10px] text-gray-400">Qty: {item.quantity} × ${item.dish.price}.00</div>
+                                        </div>
+                                      </div>
+                                      <span class="font-bold text-gray-800">${item.dish.price * item.quantity}.00</span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p class="text-xs text-gray-400 italic py-1">No dishes yet</p>
+                                )}
+                              </div>
+
+                              <div class="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-900">
+                                <span class="text-gray-500 font-normal">Subtotal</span>
+                                <span>${person.total}.00</span>
+                              </div>
+                            </article>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Consolidated Order Summary */}
+                  <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+                    <div>
+                      <h3 class="font-bold text-sm text-gray-900">Consolidated Pre-Order</h3>
+                      <p class="text-[11px] text-gray-500">Aggregated kitchen order from submitted participants ({consolidation.submittedCount})</p>
+                    </div>
+
+                    <div class="space-y-1.5 text-xs divide-y divide-gray-100">
+                      {consolidation.dishes.length > 0 ? (
+                        consolidation.dishes.map((dish) => (
+                          <div key={dish.dishId} class="pt-1.5 flex items-center justify-between">
+                            <span class="text-gray-700 font-medium">
+                              {dish.name} <span class="font-bold text-gray-900">× {dish.quantity}</span>
+                            </span>
+                            <span class="font-bold text-gray-900">${dish.total}.00</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p class="text-xs text-gray-400 italic">No submitted items</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* FOOTER */}
+                <footer class="p-5 md:p-6 border-t border-gray-100 bg-white space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-[11px] text-gray-500 block">Total for Restaurant:</span>
+                      <span class="text-xs text-gray-400">Submitted carts only</span>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-2xl font-black text-[#18633B]">${consolidation.grandTotal}.00</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsSubmitModalOpen(true)}
+                    disabled={consolidation.dishes.length === 0 || groupStatus === "Submitted"}
+                    class={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm transition shadow-sm ${
+                      groupStatus === "Submitted"
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                        : consolidation.dishes.length === 0
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-[#18633B] hover:bg-[#124B2D] text-white active:scale-[0.99]'
+                    }`}
+                  >
+                    {groupStatus === "Submitted" ? "Pre-Order Sent to Restaurant" : "Submit Pre-Order"}
+                  </button>
+                </footer>
+
+              </main>
+            </div>
+          )}
+
+        </div>
       );
     }
 
