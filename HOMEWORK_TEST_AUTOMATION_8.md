@@ -1,12 +1,9 @@
 # Звіт до домашнього завдання: Test Automation #8
 ## Автоматизація end-to-end (E2E) сценаріїв групового pre-order (Green & Tasty)
 
-* **Автор:** Viktoriia-P-H11
 * **Репозиторій проєкту:** [https://github.com/Viktoriia-P-H11/restaurant-preorder](https://github.com/Viktoriia-P-H11/restaurant-preorder)
 * **Живий хмарний застосунок (AWS):** [https://8191ergrtg.execute-api.us-west-2.amazonaws.com/](https://8191ergrtg.execute-api.us-west-2.amazonaws.com/)
 * **CI/CD Workflow (GitHub Actions):** [https://github.com/Viktoriia-P-H11/restaurant-preorder/actions](https://github.com/Viktoriia-P-H11/restaurant-preorder/actions)
-* **Форма здачі:** [Microsoft Forms #8](https://forms.cloud.microsoft/e/6Y8eBy6EyJ?origin=lprLink)
-* **Статус виконання:** 100% (Повністю виконано Рівень 1, Рівень 2, Рівень 3 та Зірочка з CI/CD пайплайном і Report Portal)
 
 ---
 
@@ -150,32 +147,3 @@ npm run test:e2e
 npm run test:all
 ```
 **Результат: 62 з 62 тестів успішно пройдено (37 Frontend/Logic + 25 E2E/Cloud).**
-
----
-
-## 5. Готові дані для форми здачі Microsoft Forms
-
-Для подачі виконання у форму [Microsoft Forms #8](https://forms.cloud.microsoft/e/6Y8eBy6EyJ?origin=lprLink) підготовлено такі відповіді:
-
-* **1. Посилання на публічний git-репозиторій:**
-  ```text
-  https://github.com/Viktoriia-P-H11/restaurant-preorder
-  ```
-
-* **2. Які рівні завдання виконано:**
-  * Обрати: **Рівень 1, Рівень 2, Рівень 3 та Зірочка (CI/CD пайплайн і Report Portal)**.
-
-* **3. Посилання на живий задеплоєний сервіс / застосунок:**
-  ```text
-  https://8191ergrtg.execute-api.us-west-2.amazonaws.com/
-  ```
-
-* **4. Опис реалізації та особливості тестового фреймворку:**
-  ```text
-  Автоматизовано повний End-to-End сценарій функціоналу групового pre-order (Green & Tasty) на рівнях 1, 2, 3 та бонусної зірочки.
-  Тести написані на Node.js та звертаються безпосередньо до живого AWS API Gateway та AWS Lambda:
-  - Рівень 1: перевірка доступності веб-додатку, HTML контейнера React 18, схеми ендпоінта сесій гостей.
-  - Рівень 2: перевірка отримання сесії хоста, об'єднання кошиків учасників, консолідація страв (Caesar Salad x 3), точний розрахунок підсумку $540.00 (без $220 неподаного замовлення) та відправка замовлення в ресторан POST /group-reservations/{id}/submit.
-  - Рівень 3: видалення сесії гостя DELETE /guest/groups/{id}/sessions/{sessionId}, оновлення сабтоталу до $220, перевірка безпеки RBAC (403 Forbidden), захист сесії Owner, правило 3-годинного вікна скасування та перевірка 15-секундного інтервалу синхронізації.
-  - Зірочка: Створено конфігурацію хмарного CI/CD пайплайну для GitHub Actions (ci/workflows/e2e-tests.yml), який автоматично запускає 37 юніт/компонентних тестів та 25 E2E тестів при кожному коміті, публікує звіт у Step Summary та інтегрований з Report Portal із вивантаженням артефакту reports/reportportal-summary.json. Усі 62 тести проходять на 100% (зелені).
-  ```
