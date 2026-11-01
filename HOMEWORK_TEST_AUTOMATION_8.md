@@ -1,14 +1,4 @@
 # Звіт до домашнього завдання: Test Automation #8
-## Автоматизація end-to-end (E2E) сценаріїв групового pre-order (Green & Tasty)
-
-* **Автор:** Viktoriia-P-H11
-* **Репозиторій проєкту:** [https://github.com/Viktoriia-P-H11/restaurant-preorder](https://github.com/Viktoriia-P-H11/restaurant-preorder)
-* **Живий хмарний застосунок (AWS):** [https://8191ergrtg.execute-api.us-west-2.amazonaws.com/](https://8191ergrtg.execute-api.us-west-2.amazonaws.com/)
-* **CI/CD Workflow (GitHub Actions):** [https://github.com/Viktoriia-P-H11/restaurant-preorder/actions](https://github.com/Viktoriia-P-H11/restaurant-preorder/actions)
-* **Форма здачі:** [Microsoft Forms #8](https://forms.cloud.microsoft/e/6Y8eBy6EyJ?origin=lprLink)
-* **Статус виконання:** 100% (Повністю виконано Рівень 1, Рівень 2, Рівень 3 та Зірочка з CI/CD пайплайном і Report Portal)
-
----
 
 ## 1. Загальний огляд реалізації
 
