@@ -1,0 +1,269 @@
+{
+  "launch": {
+    "id": "launch-1793539227150",
+    "name": "EPAM_Marathon_HW8_E2E",
+    "project": "green_and_tasty_qa",
+    "endpoint": "https://reportportal.epam.com/api/v1",
+    "startTime": "2026-11-01T13:20:27.150Z",
+    "endTime": "2026-11-01T13:20:30.095Z",
+    "status": "PASSED"
+  },
+  "statistics": {
+    "total": 25,
+    "passed": 25,
+    "failed": 0,
+    "passRatio": "100.0%"
+  },
+  "items": [
+    {
+      "id": "item-1",
+      "launchId": "launch-1793539227150",
+      "name": "AWS Live Application responds with HTTP 200 OK",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 521,
+      "timestamp": "2026-11-01T13:20:28.766Z",
+      "error": null
+    },
+    {
+      "id": "item-2",
+      "launchId": "launch-1793539227150",
+      "name": "HTML payload contains valid application branding header",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:28.766Z",
+      "error": null
+    },
+    {
+      "id": "item-3",
+      "launchId": "launch-1793539227150",
+      "name": "DOM contains root container for React 18 mounting",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:28.766Z",
+      "error": null
+    },
+    {
+      "id": "item-4",
+      "launchId": "launch-1793539227150",
+      "name": "GET /guest/groups/{id}/sessions returns HTTP 200 status",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 182,
+      "timestamp": "2026-11-01T13:20:28.948Z",
+      "error": null
+    },
+    {
+      "id": "item-5",
+      "launchId": "launch-1793539227150",
+      "name": "Response payload contains 'participants' array",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:28.948Z",
+      "error": null
+    },
+    {
+      "id": "item-6",
+      "launchId": "launch-1793539227150",
+      "name": "Group contains active participant sessions (found: 2)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:28.948Z",
+      "error": null
+    },
+    {
+      "id": "item-7",
+      "launchId": "launch-1793539227150",
+      "name": "All participants adhere to contract schema (id, name, items, isSubmitted)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:28.948Z",
+      "error": null
+    },
+    {
+      "id": "item-8",
+      "launchId": "launch-1793539227150",
+      "name": "GET /reservations/{id}/guest-session-id retrieves valid Host session ID",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 187,
+      "timestamp": "2026-11-01T13:20:29.136Z",
+      "error": null
+    },
+    {
+      "id": "item-9",
+      "launchId": "launch-1793539227150",
+      "name": "Host combines personal pre-order cart with remote table guests",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.136Z",
+      "error": null
+    },
+    {
+      "id": "item-10",
+      "launchId": "launch-1793539227150",
+      "name": "Consolidation identifies all submitted participants (Walter + Andrii = 2)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.137Z",
+      "error": null
+    },
+    {
+      "id": "item-11",
+      "launchId": "launch-1793539227150",
+      "name": "Consolidation identifies unsubmitted carts (Olena = 1)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.137Z",
+      "error": null
+    },
+    {
+      "id": "item-12",
+      "launchId": "launch-1793539227150",
+      "name": "Consolidation merges identical dishes by dishId (Caesar Salad x 3)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.137Z",
+      "error": null
+    },
+    {
+      "id": "item-13",
+      "launchId": "launch-1793539227150",
+      "name": "Consolidated Grand Total strictly equals $540.00 (submitted only, excluding $220 unsubmitted)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.137Z",
+      "error": null
+    },
+    {
+      "id": "item-14",
+      "launchId": "launch-1793539227150",
+      "name": "POST /group-reservations/{id}/submit successfully sends order to restaurant",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 200,
+      "timestamp": "2026-11-01T13:20:29.337Z",
+      "error": null
+    },
+    {
+      "id": "item-15",
+      "launchId": "launch-1793539227150",
+      "name": "Server responds with consolidated dishes payload upon submission",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.337Z",
+      "error": null
+    },
+    {
+      "id": "item-16",
+      "launchId": "launch-1793539227150",
+      "name": "DELETE /guest/groups/{id}/sessions/{sessionId} removes guest successfully",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 192,
+      "timestamp": "2026-11-01T13:20:29.529Z",
+      "error": null
+    },
+    {
+      "id": "item-17",
+      "launchId": "launch-1793539227150",
+      "name": "Server confirms session removal and excludes removed guest from group snapshot",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.530Z",
+      "error": null
+    },
+    {
+      "id": "item-18",
+      "launchId": "launch-1793539227150",
+      "name": "Server recalculates group subtotal after guest removal (updated total: $220)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.530Z",
+      "error": null
+    },
+    {
+      "id": "item-19",
+      "launchId": "launch-1793539227150",
+      "name": "RBAC Security: Non-owner guest deletion is rejected with HTTP 403 Forbidden",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 181,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-20",
+      "launchId": "launch-1793539227150",
+      "name": "Security: Owner session is protected and cannot be deleted",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-21",
+      "launchId": "launch-1793539227150",
+      "name": "Guests can be removed by the table Host",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-22",
+      "launchId": "launch-1793539227150",
+      "name": "3-Hour Policy: Free cancellation permitted at 14:15 for 18:30 reservation (> 3h)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-23",
+      "launchId": "launch-1793539227150",
+      "name": "3-Hour Policy: Cancellation locked at 16:00 for 18:30 reservation (< 3h)",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-24",
+      "launchId": "launch-1793539227150",
+      "name": "Polling configuration enforces exact 15-second silent sync interval",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.711Z",
+      "error": null
+    },
+    {
+      "id": "item-25",
+      "launchId": "launch-1793539227150",
+      "name": "Graceful error handling: API returns HTTP 404 for non-existent group",
+      "level": "Level 1",
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": "2026-11-01T13:20:29.896Z",
+      "error": null
+    }
+  ]
+}

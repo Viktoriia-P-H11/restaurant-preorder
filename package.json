@@ -8,6 +8,8 @@
     "start": "node -e \"console.log('Application live at: https://8191ergrtg.execute-api.us-west-2.amazonaws.com/')\"",
     "test": "node tests/run-hw-tests.js",
     "test:hw": "node tests/run-hw-tests.js",
+    "test:e2e": "node tests/e2e-automation.test.js",
+    "test:all": "node tests/run-hw-tests.js && node tests/e2e-automation.test.js",
     "build": "node -e \"console.log('Bundle verification passed')\"",
     "deploy": "cd infra && terraform apply -auto-approve"
   },
