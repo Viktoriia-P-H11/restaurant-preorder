@@ -1,6 +1,5 @@
 # Restaurant Group Pre-Order API & Application (Green & Tasty)
-
-https://github.com/Viktoriia-P-H11/restaurant-preorder/actions/workflows/e2e-tests.yml
+https://github.com/Viktoriia-P-H11/restaurant-preorder/tree/main/ci/workflows
 
 A full-stack application implementing the **Group Pre-Order** system for restaurant table reservations, built with **Node.js 22**, **React 18**, **Tailwind CSS**, and deployed serverless on **AWS Lambda** & **Amazon API Gateway** via **Terraform**.
 
