@@ -1,0 +1,24 @@
+ID: 1,Ttitle: Verify that Guest joined to the Group session when Reservation = Reserved,,Status: Failed
+,"Pre-conditions:
+The Owner has generated and shared a valid link
+Reservation status is ""Reserved""",,
+,"Steps:
+1. Guest redirected by shared link.
+2. Investigate ""You're invated"" pop-up window.
+3. Enter 1 character in the ""Enter your name"" field.
+4. Click [Browse menu] button.","Expected result:
+1. ""You're invated"" pop-up window is opened.
+2. ""You're invated"" pop-up window contains:
+who invited, restaurant name, location, date&time. And presented according Figma design: https://www.figma.com/file/h42Bx53fFhcAkTMPHwr0ef?type=design&node-id=110716%3A28383&mode=dev 
+""Enter your name"" field is empty
+[Browse menu] is disabled.
+3. [Browse menu] is enabled.
+4. Guest is redericted to the Menu page.",
+,,,
+ID: 2,Ttitle: Verify that Guest is redirected to the static page with appropriate message when Reservation = Cancelled,,Status: Failed
+,"Pre-conditions:
+The Owner has generated and shared a valid link
+Reservation status is ""Cancelled""",,
+,"Steps:
+1. Guest redirected by shared link.","Expected result:
+1. Static page with message ""This pre-order session has expired or is no longer active."" is opened.",

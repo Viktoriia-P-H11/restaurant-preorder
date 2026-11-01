@@ -21,6 +21,10 @@ A full-stack application implementing the **Group Pre-Order** system for restaur
    * Форма здачі: `https://forms.cloud.microsoft/e/Fq1zqQ9VwP`
    * Реалізовані рівні: Практичне, 1-й, 2-й та 3-й рівні (+ Бонус Remove Guest) за макетом Figma на React, з проходженням усіх 37 автотестів (`npm run test:hw`).
 
+3. **[Звіт до завдання Manual QA #7 (Аналіз вимог і тестування User Story)](HOMEWORK_MANUAL_QA_7.md)**
+   * Форма здачі: `https://forms.cloud.microsoft/e/npFt9LcT1K`
+   * Зміст: Повний аналіз вимог User Story US11, набір тест-кейсів за шаблоном EPAM, дефект-репорти за скріншотом реалізації та готові відповіді для форми.
+
 ---
 
 ## Architecture and Technology Stack

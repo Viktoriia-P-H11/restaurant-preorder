@@ -1,0 +1,33 @@
+ID: 1,"Summary: [X] (close) button is shown in the ""You're invated"" pop-up window",,"Env: P_PRD
+
+Priority: Medium
+
+Severity: Major"
+,"Pre-conditions:
+The Owner has generated and shared a valid link
+Reservation status is ""Reserved""",,
+,"Steps:
+1. Guest is redirected by invated link.
+2. Pay attention to the up right coner in the ""You're invated"" pop-up window.
+
+Actual result:  [X] (close) button is shown. And after clicking on it nothing happened. 
+
+Expected result:  [X] (close) button isn't presented in the ""You're invated"" pop-up window.",,
+Atachments: ,,,
+,,,
+ID: 2,Summary: Wrong message is shown on the page which opened when Guest redirected by link for Cancelled registration,,"Env: P_PRD
+
+Priority: Medium
+
+Severity: Major"
+,"Pre-conditions:
+The Owner has generated and shared a valid link
+Reservation status is ""Cancelled""",,
+,"Steps:
+1. Guest is redirected by shared link.
+
+Actual result: ""We couldn’t load the invitation
+This may be a temporary connection or server issue. Please try again."" message is shown.
+
+Expected result: ""This pre-order session has expired or is no longer active."" message is shown.",,
+Atachments: ,,,

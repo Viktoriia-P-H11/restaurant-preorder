@@ -1,0 +1,380 @@
+q
+BT
+0 792 Td
+ET
+Q
+q
+0.0375 w
+2 J
+0 j
+10 M
+[]0 d
+48 744 m
+564 744 l
+564 48.04 l
+48 48.04 l
+48 744 l
+h
+W
+n
+0.95686 0.96078 0.96863 rg
+48 715.05 m
+48 694.88 l
+93.79 694.88 l
+93.79 715.05 l
+h
+f
+93.79 715.05 m
+93.79 694.88 l
+515.92 694.88 l
+515.92 715.05 l
+h
+f
+0.75686 0.78039 0.81569 rg
+47.63 715.42 m
+94.16 715.42 l
+93.41 714.67 l
+48.38 714.67 l
+h
+f
+94.16 715.42 m
+94.16 694.5 l
+93.41 695.25 l
+93.41 714.67 l
+h
+f
+94.16 694.5 m
+47.63 694.5 l
+48.38 695.25 l
+93.41 695.25 l
+h
+f
+47.63 694.5 m
+47.63 715.42 l
+48.38 714.67 l
+48.38 695.25 l
+h
+f
+93.41 715.42 m
+516.3 715.42 l
+515.55 714.67 l
+94.16 714.67 l
+h
+f
+516.3 715.42 m
+516.3 694.5 l
+515.55 695.25 l
+515.55 714.67 l
+h
+f
+516.3 694.5 m
+93.41 694.5 l
+94.16 695.25 l
+515.55 695.25 l
+h
+f
+93.41 694.5 m
+93.41 715.42 l
+94.16 714.67 l
+94.16 695.25 l
+h
+f
+47.63 695.25 m
+94.16 695.25 l
+93.41 694.5 l
+48.38 694.5 l
+h
+f
+94.16 695.25 m
+94.16 677.55 l
+93.41 678.3 l
+93.41 694.5 l
+h
+f
+94.16 677.55 m
+47.63 677.55 l
+48.38 678.3 l
+93.41 678.3 l
+h
+f
+47.63 677.55 m
+47.63 695.25 l
+48.38 694.5 l
+48.38 678.3 l
+h
+f
+93.41 695.25 m
+516.3 695.25 l
+515.55 694.5 l
+94.16 694.5 l
+h
+f
+516.3 695.25 m
+516.3 677.55 l
+515.55 678.3 l
+515.55 694.5 l
+h
+f
+516.3 677.55 m
+93.41 677.55 l
+94.16 678.3 l
+515.55 678.3 l
+h
+f
+93.41 677.55 m
+93.41 695.25 l
+94.16 694.5 l
+94.16 678.3 l
+h
+f
+47.63 678.3 m
+94.16 678.3 l
+93.41 677.55 l
+48.38 677.55 l
+h
+f
+94.16 678.3 m
+94.16 660.6 l
+93.41 661.35 l
+93.41 677.55 l
+h
+f
+94.16 660.6 m
+47.63 660.6 l
+48.38 661.35 l
+93.41 661.35 l
+h
+f
+47.63 660.6 m
+47.63 678.3 l
+48.38 677.55 l
+48.38 661.35 l
+h
+f
+93.41 678.3 m
+516.3 678.3 l
+515.55 677.55 l
+94.16 677.55 l
+h
+f
+516.3 678.3 m
+516.3 660.6 l
+515.55 661.35 l
+515.55 677.55 l
+h
+f
+516.3 660.6 m
+93.41 660.6 l
+94.16 661.35 l
+515.55 661.35 l
+h
+f
+93.41 660.6 m
+93.41 678.3 l
+94.16 677.55 l
+94.16 661.35 l
+h
+f
+47.63 661.35 m
+94.16 661.35 l
+93.41 660.6 l
+48.38 660.6 l
+h
+f
+94.16 661.35 m
+94.16 643.65 l
+93.41 644.4 l
+93.41 660.6 l
+h
+f
+94.16 643.65 m
+47.63 643.65 l
+48.38 644.4 l
+93.41 644.4 l
+h
+f
+47.63 643.65 m
+47.63 661.35 l
+48.38 660.6 l
+48.38 644.4 l
+h
+f
+93.41 661.35 m
+516.3 661.35 l
+515.55 660.6 l
+94.16 660.6 l
+h
+f
+516.3 661.35 m
+516.3 643.65 l
+515.55 644.4 l
+515.55 660.6 l
+h
+f
+516.3 643.65 m
+93.41 643.65 l
+94.16 644.4 l
+515.55 644.4 l
+h
+f
+93.41 643.65 m
+93.41 661.35 l
+94.16 660.6 l
+94.16 644.4 l
+h
+f
+0 0 0 rg
+72.22 614.79 m
+72.22 614 71.58 613.35 70.78 613.35 c
+69.98 613.35 69.34 614 69.34 614.79 c
+69.34 615.59 69.98 616.24 70.78 616.24 c
+71.58 616.24 72.22 615.59 72.22 614.79 c
+h
+f
+72.22 606.09 m
+72.22 605.3 71.58 604.65 70.78 604.65 c
+69.98 604.65 69.34 605.3 69.34 606.09 c
+69.34 606.89 69.98 607.54 70.78 607.54 c
+71.58 607.54 72.22 606.89 72.22 606.09 c
+h
+f
+BT
+/F1 7.5 Tf
+1 0 0 1 67.58 568.2 Tm
+(1.  )Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 67.58 559.5 Tm
+(2.  )Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 67.58 550.8 Tm
+(3.  )Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 67.58 542.1 Tm
+(4.  )Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 67.58 533.4 Tm
+(5.  )Tj
+ET
+BT
+/F2 18 Tf
+1 0 0 1 48 726.67 Tm
+([Draft] US11_Guest Viewing Reservation Menu)Tj
+ET
+BT
+/F2 7.5 Tf
+1 0 0 1 55.88 702.22 Tm
+(Epic)Tj
+ET
+BT
+/F2 7.5 Tf
+1 0 0 1 101.66 702.22 Tm
+(Order Management)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 52.13 683.78 Tm
+(US name)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 97.91 683.78 Tm
+(Guest Reservation and Menu View)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 52.13 666.83 Tm
+(Role)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 97.91 666.83 Tm
+(Guest)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 52.13 649.88 Tm
+(Description)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 97.91 649.88 Tm
+(As a Guest, I want to see the full restaurant menu, so that I know what options are available and can decide what to choose.�)Tj
+ET
+BT
+/F2 7.5 Tf
+1 0 0 1 48 628.42 Tm
+(Pre-conditions:)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 78 611.33 Tm
+(Guest has successfully joined the session \(US_G10\).)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 248.51 602.63 Tm
+( Created/"Reserved".)Tj
+ET
+0.0902 0.16863 0.30196 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 78 602.63 Tm
+(The parent reservation or group session status is in)Tj
+ET
+0 0 0 rg
+BT
+/F2 7.5 Tf
+1 0 0 1 48 585.3 Tm
+(Acceptance Criteria \(AC\):)Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 330.19 568.2 Tm
+( \(e.g., Appetizers, Main Course, Desserts\).)Tj
+ET
+0.0902 0.16863 0.30196 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 78 568.2 Tm
+(The Guest can view the full restaurant menu structured logically by category)Tj
+ET
+0 0 0 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 199.73 559.5 Tm
+(�name, price, serving size in grams, image and current availability status.)Tj
+ET
+0.0902 0.16863 0.30196 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 78 559.5 Tm
+(Each menu item must clearly display)Tj
+ET
+0 0 0 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 78 550.8 Tm
+(The Guest can add an available dish directly to their personal subcart by interacting with a clear action button \(e.g., "Pre-order" \))Tj
+ET
+BT
+/F1 7.5 Tf
+1 0 0 1 78 542.1 Tm
+(Items currently marked "On Stop" are clearly indicated as unavailable and cannot be selected or added to the cart.)Tj
+ET
+0.0902 0.16863 0.30196 rg
+BT
+/F1 7.5 Tf
+1 0 0 1 78 533.4 Tm
+(The menu reflects the current data at the time the Guest opens or refreshes the screen.)Tj
+ET
+Q
+q
+Q
