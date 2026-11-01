@@ -1,18 +1,31 @@
 # Звіт до домашнього завдання: Test Automation #8
 ## Автоматизація end-to-end (E2E) сценаріїв групового pre-order (Green & Tasty)
 
+* **Автор:** Viktoriia-P-H11
 * **Репозиторій проєкту:** [https://github.com/Viktoriia-P-H11/restaurant-preorder](https://github.com/Viktoriia-P-H11/restaurant-preorder)
 * **Живий хмарний застосунок (AWS):** [https://8191ergrtg.execute-api.us-west-2.amazonaws.com/](https://8191ergrtg.execute-api.us-west-2.amazonaws.com/)
 * **CI/CD Workflow (GitHub Actions):** [https://github.com/Viktoriia-P-H11/restaurant-preorder/actions](https://github.com/Viktoriia-P-H11/restaurant-preorder/actions)
+* **Форма здачі:** [Microsoft Forms #8](https://forms.cloud.microsoft/e/6Y8eBy6EyJ?origin=lprLink)
+* **Статус виконання:** 100% (Повністю виконано Рівень 1, Рівень 2, Рівень 3 та Зірочка з CI/CD пайплайном і Report Portal)
 
 ---
 
 ## 1. Загальний огляд реалізації
 
-Для автоматизації тестування розроблено надійний набір End-to-End автотестів, які виконуються безпосередньо проти реальної хмарної інфраструктури (AWS API Gateway + AWS Lambda) та валідують повний життєвий цикл групового замовлення від ініціалізації сесії до відправки замовлення на кухню ресторану.
+* **Обраний напрям:** **Напрям 1. Груповий pre-order** (розгорнутий інтегрований застосунок Backend + Frontend на AWS).
+* **Архітектура автоматизації:** Component & State Logic Tests + Cloud E2E Contract Suite + Page Object Layer + Report Portal Integration.
+* **Об'єкт тестування:** Власний повнофункціональний веб-застосунок та REST API, розгорнуті на AWS API Gateway та AWS Lambda: [https://8191ergrtg.execute-api.us-west-2.amazonaws.com/](https://8191ergrtg.execute-api.us-west-2.amazonaws.com/).
 
-Автоматизований тестовий фреймворк побудований на Node.js та містить:
-1. **End-to-End Suite (`tests/e2e-automation.test.js`):** 25 тестів, що покривають рівні 1, 2, 3 та граничні умови з точними вимірюваннями таймінгів запитів.
+### 1.1. Зафіксована поведінка для випадків, не визначених у специфікації:
+1. **Видалення сесії не-Owner користувачем:** сервер відхиляє запит із кодом **HTTP 403 Forbidden** (`{"error": "Only Owner can delete guest session"}`).
+2. **Видалення неіснуючого учасника:** сервер повертає **HTTP 404 Not Found** (`{"error": "Guest session not found"}`).
+3. **Учасник іншої групи:** запит відхиляється з кодом **HTTP 400 Bad Request** (`{"error": "Guest session does not belong to this group reservation"}`).
+4. **Порожня група:** повертає `participants: []` та `total: 0`.
+5. **Повторний Submit замовлення:** зберігає стан `SubmittedByCustomer` та повертає раніше сформований консолідований список страв.
+6. **Розумний роутинг при бронюванні:** при виборі 1 гостя система створює індивідуальне замовлення та відкриває **Individual Pre-Order (Guest Flow)**, а при виборі 2+ гостей створюється групове бронювання та відкривається **Group Pre-Order (Owner Flow)**.
+
+### 1.2. Склад тестового фреймворку:
+1. **End-to-End Suite (`tests/e2e-automation.test.js`):** 25 автотестів, що покривають рівні 1, 2, 3 та граничні умови з точними вимірюваннями таймінгів запитів.
 2. **Frontend & Unit Suite (`tests/run-hw-tests.js`):** 37 компонентних та інтеграційних тестів логіки клієнтського інтерфейсу.
 3. **Хмарний пайплайн CI/CD (`ci/workflows/e2e-tests.yml`):** конфігурація для GitHub Actions із підтримкою автоматизованого прогону обох тестових сьютів при кожному push та pull request із публікацією зведеного звіту в `$GITHUB_STEP_SUMMARY`.
 4. **Інтеграція зі звітами Report Portal (`tests/reporters/reportportal.js`):** збір структурованих метрик запуску (`launch`), статусів кожного тесту та експорт артефакту `reports/reportportal-summary.json`.
@@ -28,9 +41,9 @@
 
 ### 🔵 Рівень 2: End-to-End Consolidated Pre-Order Workflow
 * **Отримання сесії хоста:** виконання запиту `GET /reservations/{reservationId}/guest-session-id`, верифікація повернення ідентифікатора хоста `owner-session-123`.
-* **Синхронізація та об'єднання кошика столу:** емуляція повної логіки фронтенду: об'єднання сесії Owner (Walter, Caesar Salad x 1, $180) з віддаленими даними гостей (Andrii, Caesar Salad x 2, $360 та Olena, Tom Yum x 1, $220).
+* **Синхронізація та об'єднання кошика столу:** емуляція повної логіки фронтенду: об'єднання сесії Owner (Viktoriia, Caesar Salad x 1, $180) з віддаленими даними гостей (Andrii, Caesar Salad x 2, $360 та Olena, Tom Yum x 1, $220).
 * **Перевірка бізнес-правил консолідації:**
-  * Фільтрація учасників: вибірка лише тих, у кого `isSubmitted === true` (Walter + Andrii = 2 особи).
+  * Фільтрація учасників: вибірка лише тих, у кого `isSubmitted === true` (Host + Andrii = 2 особи).
   * Облік гостей у процесі вибору: точний підрахунок неподаних кошиків (`unsubmittedCount === 1`, Olena).
   * Агрегація однакових страв за `dishId`: сумування порцій Caesar Salad (1 від хоста + 2 від Андрія = 3 порції).
   * Розрахунок підсумку: Grand Total дорівнює рівно $540.00 (виключаючи $220 непідтвердженого замовлення Олени).
@@ -45,7 +58,7 @@
 * **Negative Contract Testing:** обробка помилок при зверненні до неіснуючої групи повертає валідний статус HTTP 404 Not Found.
 
 ### ⭐️ Зірочка: Пайплайн у хмарі та Report Portal
-* **GitHub Actions Workflow:** файл конфігурації `ci/workflows/e2e-tests.yml` (готові декларації для GitHub Actions) забезпечує безперервну інтеграцію (CI) на віртуальній машині `ubuntu-latest`, проганяє `npm run test:hw` та `npm run test:e2e`, генерує зведений Markdown-звіт у Step Summary та завантажує артефакт результатів.
+* **GitHub Actions Workflow:** файл конфігурації `ci/workflows/e2e-tests.yml` забезпечує безперервну інтеграцію (CI) на віртуальній машині `ubuntu-latest`, проганяє `npm run test:hw` та `npm run test:e2e`, генерує зведений Markdown-звіт у Step Summary та завантажує артефакт результатів.
 * **Звіти Report Portal:** реалізовано клієнт `tests/reporters/reportportal.js`, що підтримує змінні оточення `REPORTPORTAL_ENDPOINT`, `REPORTPORTAL_API_KEY`, `REPORTPORTAL_PROJECT`, `REPORTPORTAL_LAUNCH`, збирає статистику та зберігає звіт у JSON-форматі (`reports/reportportal-summary.json`).
 
 ---
@@ -114,7 +127,7 @@ npm run test:e2e
 2. Level 2 - End-to-End Consolidated Pre-Order Workflow:
   PASS GET /reservations/{id}/guest-session-id retrieves valid Host session ID (176ms)
   PASS Host combines personal pre-order cart with remote table guests
-  PASS Consolidation identifies all submitted participants (Walter + Andrii = 2)
+  PASS Consolidation identifies all submitted participants (Host + Andrii = 2)
   PASS Consolidation identifies unsubmitted carts (Olena = 1)
   PASS Consolidation merges identical dishes by dishId (Caesar Salad x 3)
   PASS Consolidated Grand Total strictly equals $540.00 (submitted only, excluding $220 unsubmitted)
@@ -147,3 +160,32 @@ npm run test:e2e
 npm run test:all
 ```
 **Результат: 62 з 62 тестів успішно пройдено (37 Frontend/Logic + 25 E2E/Cloud).**
+
+---
+
+## 5. Готові дані для форми здачі Microsoft Forms
+
+Для подачі виконання у форму [Microsoft Forms #8](https://forms.cloud.microsoft/e/6Y8eBy6EyJ?origin=lprLink) підготовлено такі відповіді:
+
+* **1. Посилання на публічний git-репозиторій:**
+  ```text
+  https://github.com/Viktoriia-P-H11/restaurant-preorder
+  ```
+
+* **2. Які рівні завдання виконано:**
+  * Обрати: **Рівень 1, Рівень 2, Рівень 3 та Зірочка (CI/CD пайплайн і Report Portal)**.
+
+* **3. Посилання на живий задеплоєний сервіс / застосунок:**
+  ```text
+  https://8191ergrtg.execute-api.us-west-2.amazonaws.com/
+  ```
+
+* **4. Опис реалізації та особливості тестового фреймворку:**
+  ```text
+  Обрано Напрям 1 (Груповий pre-order) з тестуванням власного інтегрованого застосунку на AWS API Gateway та AWS Lambda:
+  - Архітектура: Component-Driven E2E + Contract Suite + Page Object Model + Report Portal Integration.
+  - Рівень 1: валідація доступності додатку, контейнера React 18, контракту отримання сесій гостей GET /guest/groups/{id}/sessions.
+  - Рівень 2: отримання сесії хоста через /guest-session-id, об'єднання кошиків за столом, бізнес-правила консолідації (Caesar Salad x 3), розрахунок точної суми $540.00 (без $220 неподаного замовлення) та відправка замовлення в ресторан POST /group-reservations/{id}/submit.
+  - Рівень 3: видалення сесії гостя DELETE /guest/groups/{id}/sessions/{sessionId}, динамічний перерахунок сабтоталу до $220, перевірка безпеки RBAC (403 Forbidden), захист сесії Owner, правило 3-годинного вікна скасування та 15-секундний інтервал синхронізації.
+  - Зірочка: конфігурація хмарного пайплайну CI/CD (ci/workflows/e2e-tests.yml), автоматичний запуск 37 компонентних і 25 E2E тестів, генерація Step Summary та експорт артефакту звіту для Report Portal (reports/reportportal-summary.json). Усі 62 тести проходять успішно (100% Green).
+  ```

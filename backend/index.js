@@ -54,6 +54,27 @@ let mockSessions = getInitialSessions();
 let orderStatus = "Draft";
 let groupReservationStatus = "Active";
 
+const getInitialReservations = () => [
+  {
+    reservationId: "res-8492",
+    tableName: "Table #4 (Indoor Lounge) • 6 Seats",
+    tableNumber: "4",
+    occasion: "Birthday Celebration",
+    location: "48 Rustaveli Avenue (Main Dining Hall)",
+    date: "2026-10-31",
+    startTime: "18:30",
+    endTime: "21:30",
+    partySize: 5,
+    hostName: "Viktoriia",
+    status: "Active"
+  }
+];
+
+let mockUsers = [
+  { id: "user-1", name: "Viktoriia", email: "viktoriia@example.com", role: "Owner" }
+];
+let mockReservations = getInitialReservations();
+
 // Helper function: calculate snapshot totals
 function calculateGroupSnapshot(sessions) {
   let grandTotal = 0;
@@ -121,12 +142,101 @@ export const handler = async (event) => {
     // ------------------------------------------------------------------
     if (path === "/reset") {
       mockSessions = getInitialSessions();
+      mockReservations = getInitialReservations();
       orderStatus = "Draft";
       groupReservationStatus = "Active";
       return {
         statusCode: 200,
         headers: jsonHeaders,
         body: JSON.stringify({ message: "State reset to initial mock data", sessions: mockSessions })
+      };
+    }
+
+    // ------------------------------------------------------------------
+    // Auth: Register & Login Endpoints
+    // ------------------------------------------------------------------
+    if (method === "POST" && path.includes("/auth/register")) {
+      let body = {};
+      try { body = typeof event.body === 'string' ? JSON.parse(event.body) : (event.body || {}); } catch { body = {}; }
+      const newUser = {
+        id: "usr-" + Date.now(),
+        name: body.name || "Guest User",
+        email: body.email || "user@example.com",
+        role: body.role || "Owner"
+      };
+      mockUsers.push(newUser);
+      return {
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify({ message: "User registered successfully", user: newUser })
+      };
+    }
+
+    if (method === "POST" && path.includes("/auth/login")) {
+      let body = {};
+      try { body = typeof event.body === 'string' ? JSON.parse(event.body) : (event.body || {}); } catch { body = {}; }
+      const foundUser = mockUsers.find(u => u.email === body.email) || {
+        id: "usr-demo",
+        name: body.email ? body.email.split('@')[0] : "Viktoriia",
+        email: body.email || "viktoriia@example.com",
+        role: "Owner"
+      };
+      return {
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify({ message: "Signed in successfully", user: foundUser })
+      };
+    }
+
+    // ------------------------------------------------------------------
+    // Reservations: Book a Table & List Reservations
+    // ------------------------------------------------------------------
+    if (method === "POST" && path === "/reservations") {
+      let body = {};
+      try { body = typeof event.body === 'string' ? JSON.parse(event.body) : (event.body || {}); } catch { body = {}; }
+      const newReservation = {
+        reservationId: "res-" + Math.floor(1000 + Math.random() * 9000),
+        tableName: `Table #${Math.floor(1 + Math.random() * 12)} (${body.partySize || 2} Seats)`,
+        tableNumber: String(Math.floor(1 + Math.random() * 12)),
+        occasion: body.occasion || "Table Reservation",
+        location: body.location || "48 Rustaveli Avenue (Main Dining Hall)",
+        date: body.date || "2026-11-02",
+        startTime: body.startTime || "18:30",
+        endTime: body.endTime || "21:30",
+        partySize: Number(body.partySize) || 2,
+        hostName: body.hostName || "Viktoriia",
+        status: "Active"
+      };
+      mockReservations.unshift(newReservation);
+      return {
+        statusCode: 201,
+        headers: jsonHeaders,
+        body: JSON.stringify({ message: "Reservation created", reservation: newReservation })
+      };
+    }
+
+    if (method === "GET" && path === "/reservations") {
+      return {
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify(mockReservations)
+      };
+    }
+
+    if (method === "GET" && path.includes("/waiter/orders")) {
+      const submitted = mockSessions.filter(s => s.isSubmitted === true);
+      const orders = [{
+        tableNumber: "4",
+        reservationId: "res-8492",
+        status: orderStatus,
+        participantsCount: mockSessions.length,
+        submittedCount: submitted.length,
+        items: submitted.flatMap(s => s.items)
+      }];
+      return {
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify(orders)
       };
     }
 
